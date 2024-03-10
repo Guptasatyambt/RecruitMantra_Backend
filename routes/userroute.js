@@ -7,5 +7,6 @@ router.post('/',handleregister);
 router.post('/signin',validation,handledetails)
 router.get('/login',handlelogin)
 router.get('/getinfo',validation,getinfo)
+   
 
 module.exports=router
