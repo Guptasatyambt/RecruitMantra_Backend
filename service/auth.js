@@ -35,13 +35,12 @@ function getUser(token) {
                 throw new Error("Anauthrised user")
             }
             req.user=decode;
-            // console.log(req.user);
             next();
     
         })
         
     }
-    res.status(400).json("Invalid token");
+    // res.status(400).json("Invalid token");
     });
 
 module.exports={
