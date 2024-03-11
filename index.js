@@ -18,6 +18,7 @@ app.use((error, req, res, next) => {
   });
   
 app.use(express.urlencoded({extended:false}));
+app.use('/resume',express.static('resume'))
 app.use('/user',userroute);
 // app.use(cookieParser());
 

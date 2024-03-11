@@ -34,21 +34,19 @@ async function handleregister(req,res){
      
     async function handledetails(req,res){
         const {name,college,branch,year,specialization,interest,resume,profileimage}=req.body
-
-        if(!name||!college||!branch||!year||!specialization||!interest||!resume||!profileimage){
+        if(!name||!college||!branch||!year||!specialization||!interest&&req.file){
             return res.status(400).json("All field are compulsory");
         }
         const user=req.user;
     const email=user.email;
     const password=user.password;
-    console.log(password)
    const updateduser= await User.findByIdAndUpdate(user._id,
         {$set:{
         name:name,
         email:email,
         password:password,
-        resume:resume,
-        profileimage:profileimage,
+        resume:req.files['resume'][0].path,
+        profileimage:req.files['profileimage'][0].path,
         college:college,
         branch:branch,
         year:year,
