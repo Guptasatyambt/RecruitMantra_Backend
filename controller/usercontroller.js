@@ -1,7 +1,6 @@
 const {setuser}=require('../service/auth')
 const User=require('../models/usermodel');
 const bycrpt=require('bcrypt');
-const { set } = require('mongoose');
 
 
 
@@ -69,9 +68,9 @@ async function handleregister(req,res){
             res.status(404)
             throw new Error("User not exist! please sign In")
         }
-        if(user&& (await bcrypt.compare(password,user.password))){
+        if(user&& (await bycrpt.compare(password,user.password))){
             const token=setuser(user)
-            res.status(200).json({accesswebtoken})
+            res.status(200).json({token})
         }
         else{
             res.status(400).json({message:"Incorrect password"})
@@ -81,10 +80,55 @@ async function handleregister(req,res){
     async function getinfo(req,res){
         
         try{
-            const user=req.user;
+            const email=req.user.email;
+            const user=await User.findOne({email})
             return res.status(200).json(user);
         }catch(e){
              res.status(401).json({message:"sorry"})
         }
     }
-    module.exports={handleregister,handledetails ,handlelogin,getinfo};
+
+    async function handlestart(req,res){
+        const email=req.user.email;
+        const user=await User.findOne({email})
+        const level=req.query.level
+        let coin=user.coins;
+        let fee=50
+        if(level=='beginner'){
+            fee=50
+            
+        }
+        if(level=='intermidiate'){
+            fee=75
+        }
+        if(level=='advance'){
+            fee=100
+        }
+    
+    if(coin>=fee){
+        coin=coin-fee;
+        const updateduser= await User.findByIdAndUpdate(user._id,
+             {$set:{
+             coins:coin,
+         }}
+         ,{new:true})
+         res.status(200).json(updateduser)
+        
+    }
+    else{
+    res.status(201).json({message:"Insufficient Balance"})
+    }
+    }
+    async function givecoins(req,res){
+        const email=req.user.email;
+        const user=await User.findOne({email})
+        var coins=user.coins
+        coins+=100
+        const updateduser= await User.findByIdAndUpdate(user._id,
+            {$set:{
+            coins:coins,
+        }}
+        ,{new:true})
+        res.status(200).json(updateduser)
+    }
+    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins};

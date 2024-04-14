@@ -1,5 +1,6 @@
 const express=require("express");
 const userroute=require('./routes/userroute')
+const feedbackroute=require('./routes/feedbackroute')
 const bodyParser = require('body-parser');
 const {ConnectionDB}=require('./connection')
 
@@ -20,6 +21,7 @@ app.use((error, req, res, next) => {
 app.use(express.urlencoded({extended:false}));
 app.use('/resume',express.static('resume'))
 app.use('/user',userroute);
+app.use('/feedback',feedbackroute)
 // app.use(cookieParser());
 
 

@@ -5,7 +5,7 @@ function setuser(user) {
    return jwt.sign({
     _id:user._id,
     email:user.email,
-   },secret,{expiresIn:"50m"})
+   },secret)
 }
 
 function getUser(token) {
