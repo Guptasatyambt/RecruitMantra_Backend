@@ -38,6 +38,10 @@ const userSchema=new mongoose.Schema({
         type:String,
         require :true,
     },
+    coins:{
+        type:Number,
+        default:150,
+    },
     interest:{
         type:String,
         require:true,
