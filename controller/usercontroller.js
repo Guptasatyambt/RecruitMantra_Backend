@@ -95,14 +95,14 @@ async function handleregister(req,res){
         let coin=user.coins;
         let fee=50
         if(level=='beginner'){
-            fee=50
+            fee=10
             
         }
         if(level=='intermidiate'){
-            fee=75
+            fee=15
         }
         if(level=='advance'){
-            fee=100
+            fee=25
         }
     
     if(coin>=fee){
