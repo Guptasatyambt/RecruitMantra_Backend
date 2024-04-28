@@ -7,8 +7,8 @@ const {ConnectionDB}=require('./connection');
 const{validation}=require('./service/auth')
 
 const app=express();
-const port=4005;
-ConnectionDB('mongodb+srv://satyamguptabt:CifR88CZjEtHNjbj@cluster0.okjrq95.mongodb.net/')
+const port=process.env.PORT;
+ConnectionDB(process.env.MONGO_URL)
 
 
 app.use(express.json());
