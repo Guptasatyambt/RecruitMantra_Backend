@@ -1,4 +1,5 @@
 const express=require("express");
+require("dotenv").config();
 const userroute=require('./routes/userroute')
 const feedbackroute=require('./routes/feedbackroute')
 const interviewroute=require('./routes/interviewrout')
