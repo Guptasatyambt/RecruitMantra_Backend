@@ -88,13 +88,9 @@ async function givecoin(req, res) {
             ,{new:true})
             return res.status(200).json({updateduser})
         
-            console.log(error)
-            res.status(401).json({message:error})
+    
         
         
-        console.log(user.id)
-        // res.status(200).json(updateduser)
-        console.log(user.id)
     }catch(e){
         res.status(401).json({message:e})
    }
