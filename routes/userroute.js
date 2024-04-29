@@ -6,7 +6,7 @@ const router=express.Router();
 
 router.post('/signin',handleregister);
 router.post('/uploadinfo',validation,upload.fields([{ name: 'profileimage', maxCount: 1 }, { name: 'resume', maxCount: 1 }]),handledetails)
-router.get('/login',handlelogin)
+router.post('/login',handlelogin)
 router.get('/getinfo',validation,getinfo)
 router.get('/startinterview',validation,handlestart)
 router.post('/givecoins',validation,givecoins);
