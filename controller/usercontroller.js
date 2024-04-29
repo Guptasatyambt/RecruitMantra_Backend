@@ -59,14 +59,14 @@ async function handleregister(req,res){
     async function handlelogin(req,res){
         const {email,password}=req.body;
         if(!email ||!password){
-            res.status(400)
-            throw new Error("enter details correctly")
+            res.status(400).json({message:"enter details correctly"})
+            // throw new Error("enter details correctly")
         }
     
         const user=await User.findOne({email})
         if(!user){
-            res.status(404)
-            throw new Error("User not exist! please sign In")
+            res.status(404).json({message:"User not exist! please sign In"})
+            // throw new Error("User not exist! please sign In")
         }
         if(user&& (await bycrpt.compare(password,user.password))){
             const token=setuser(user)
