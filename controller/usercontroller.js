@@ -28,7 +28,7 @@ async function handleregister(req,res){
         interest:"",
     })
     const token=setuser(user);
-    return res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}});
+    return res.status(200).json({message:"Success",data:{token,id:user.id,name:""}});
     }
      
     async function handledetails(req,res){
