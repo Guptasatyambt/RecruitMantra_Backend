@@ -53,7 +53,7 @@ async function handleregister(req,res){
         interest:interest,
     }}
     ,{new:true})
-    res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}})
+    res.status(200).json({message:"Success",data:{id:user.id,name:user.name}});
     }
 
     async function handlelogin(req,res){
