@@ -28,7 +28,7 @@ async function handleregister(req,res){
         interest:"",
     })
     const token=setuser(user);
-    return res.status(200).json({message:"Success",data:{token,id:user.id}});
+    return res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}});
     }
      
     async function handledetails(req,res){
@@ -70,7 +70,7 @@ async function handleregister(req,res){
         }
         if(user&& (await bycrpt.compare(password,user.password))){
             const token=setuser(user)
-            res.status(200).json({message:"Success",data:{token,id:user.id}})
+            res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}});
         }
         else{
             res.status(400).json({message:"Incorrect password"})
