@@ -7,8 +7,33 @@ async function handlestart(req, res) {
    const user = await User.findOne({ email });
    const level=req.query.level
         if (!user) {
-            return res.status(404).json("User not found");
+            return res.status(404).json({message:"User not Found"});
         }
+        let coin=user.coins;
+        let fee=50
+        if(level=='beginner'){
+            fee=10  
+        }
+        if(level=='intermidiate'){
+            fee=15
+        }
+        if(level=='advance'){
+            fee=25
+        }
+    
+    if(coin>=fee){
+        coin=coin-fee;
+        const updateduser= await User.findByIdAndUpdate(user._id,
+             {$set:{
+             coins:coin,
+         }}
+         ,{new:true})
+        //  res.status(200).json(updateduser)
+        
+    }
+    else{
+    res.status(201).json({message:"Insufficient Balance"})
+    }
         const _id = user.id;
         const interview = await InterView.create({
             auther: _id, // Assuming _id is the ObjectId of the user
@@ -16,7 +41,7 @@ async function handlestart(req, res) {
             level: level // Assuming userFeedback is the feedback content
         });
 
-        return res.status(200).json(interview);
+        return res.status(200).json({message:"Start Successfully"});
     } catch (error) {
         return res.status(500).json({message:error});
     }
