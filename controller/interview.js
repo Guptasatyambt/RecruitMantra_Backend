@@ -11,6 +11,7 @@ async function handlestart(req, res) {
         }
         let coin=user.coins;
         let fee=50
+        
         if(level=='beginner'){
             fee=10  
         }
