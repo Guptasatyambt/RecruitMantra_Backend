@@ -7,7 +7,7 @@ const interviewroute=require('./routes/interviewrout')
 const bodyParser = require('body-parser');
 const {ConnectionDB}=require('./connection');
 const{validation}=require('./service/auth')
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+// const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
