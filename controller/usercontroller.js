@@ -68,6 +68,7 @@ async function handleregister(req,res){
     
         const user=await User.findOne({email})
         if(!user){
+            
             res.status(404).json({message:"User not exist! please sign In"})
             // throw new Error("User not exist! please sign In")
         }
