@@ -1,17 +1,17 @@
 const jwt=require("jsonwebtoken")
-const secret="$@tyam12345";
+
 const asyncHandler=require('express-async-handler')
 function setuser(user) {
    return jwt.sign({
     _id:user._id,
     email:user.email,
-   },secret,{expiresIn:"50m"})
+   },process.env.secret)
 }
 
 function getUser(token) {
     if(!token) return null;
     try {
-    return jwt.verify(token,secret);
+    return jwt.verify(token,process.env.secret);
     } catch (error) {
         return null;
     }
@@ -29,19 +29,18 @@ function getUser(token) {
             res.status(401);
             throw new Error("Anuthrised User");
         }
-        jwt.verify(token,secret,(err,decode)=>{
+        jwt.verify(token,process.env.secret,(err,decode)=>{
             if(err){
                 res.status(401)
                 throw new Error("Anauthrised user")
             }
             req.user=decode;
-            // console.log(req.user);
             next();
     
         })
         
     }
-    res.status(400).json("Invalid token");
+    // res.status(400).json("Invalid token");
     });
 
 module.exports={
