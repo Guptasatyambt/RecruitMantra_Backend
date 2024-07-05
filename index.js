@@ -2,11 +2,16 @@ const express=require("express");
 require("dotenv").config();
 const userroute=require('./routes/userroute')
 const feedbackroute=require('./routes/feedbackroute')
+const admin = require('firebase-admin');
 const interviewroute=require('./routes/interviewrout')
 const bodyParser = require('body-parser');
 const {ConnectionDB}=require('./connection');
 const{validation}=require('./service/auth')
+const serviceAccount = require('./intenview-firebase-adminsdk-jg6o5-85f142c09c.json');
 
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 const app=express();
 const port=process.env.PORT;
 ConnectionDB(process.env.MONGO_URL)
@@ -22,6 +27,7 @@ app.use((error, req, res, next) => {
   });
   
 app.use(express.urlencoded({extended:false}));
+
 app.use('/resume',express.static('resume'))
 app.use('/user',userroute);
 app.use('/feedback',feedbackroute)

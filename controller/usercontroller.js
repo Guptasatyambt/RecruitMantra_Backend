@@ -1,6 +1,7 @@
 const {setuser}=require('../service/auth')
 const User=require('../models/usermodel');
 const bycrpt=require('bcrypt');
+const admin = require('firebase-admin');
 
 
 
@@ -27,8 +28,10 @@ async function handleregister(req,res){
         specialization:"",
         interest:"",
     })
+    uid=user.id;
+    const customToken = await admin.auth().createCustomToken(uid);
     const token=setuser(user);
-    return res.status(200).json({message:"Success",data:{token,id:user.id,name:""}});
+    return res.status(200).json({message:"Success",data:{token,customtoken:customToken,id:user.id,name:""}});
     }
      
     async function handledetails(req,res){
@@ -69,8 +72,10 @@ async function handleregister(req,res){
             // throw new Error("User not exist! please sign In")
         }
         if(user&& (await bycrpt.compare(password,user.password))){
-            const token=setuser(user)
-            res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}});
+            const token=setuser(user);
+            uid=user.id
+            const customToken = await admin.auth().createCustomToken(uid);
+            res.status(200).json({message:"Success",data:{token,customtoken:customToken,id:user.id,name:user.name}});
         }
         else{
             res.status(400).json({message:"Incorrect password"})
@@ -130,4 +135,29 @@ async function handleregister(req,res){
         ,{new:true})
         res.status(200).json(updateduser)
     }
+
+    // async function firebaselogin(req,res){
+    //     const {uid} = req.body;
+
+    //     if (!uid) {
+    //       return res.status(400).send('UID is required');
+    //     }
+      
+    //     try {
+    //       const customToken = await admin.auth().createCustomToken(uid);
+    //     //   res.status(200).send(customToken);
+    //       res.status(200).json({message:"Success",data:{customToken}});
+    //     } catch (error) {
+    //       console.error('Error creating custom token:', error);
+    //       res.status(500).send('Error creating custom token');
+    //     }
+    // }
+
+    // async function developer(req,res){
+    //     try{
+    //         res.status(200).json({message:"routes",userroute:{/user/signin}})
+    //     }catch(e){
+    //         res.json({message:"some error accured"})
+    //     }
+    // }
     module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins};
