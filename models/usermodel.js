@@ -6,7 +6,7 @@ const userSchema=new mongoose.Schema({
         require:true,
         unique:true,
     },
-    name:{
+    name:{  
         type:String,
         require:true,
     },
@@ -37,6 +37,10 @@ const userSchema=new mongoose.Schema({
     resume:{
         type:String,
         require :true,
+    },
+    coins:{
+        type:Number,
+        default:150,
     },
     interest:{
         type:String,

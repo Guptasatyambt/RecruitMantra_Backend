@@ -1,11 +1,15 @@
 const express=require("express");
+require("dotenv").config();
 const userroute=require('./routes/userroute')
+const feedbackroute=require('./routes/feedbackroute')
+const interviewroute=require('./routes/interviewrout')
 const bodyParser = require('body-parser');
-const {ConnectionDB}=require('./connection')
+const {ConnectionDB}=require('./connection');
+const{validation}=require('./service/auth')
 
 const app=express();
-const port=4005;
-ConnectionDB('mongodb+srv://satyamguptabt:CifR88CZjEtHNjbj@cluster0.okjrq95.mongodb.net/')
+const port=process.env.PORT;
+ConnectionDB(process.env.MONGO_URL)
 
 
 app.use(express.json());
@@ -18,7 +22,10 @@ app.use((error, req, res, next) => {
   });
   
 app.use(express.urlencoded({extended:false}));
+app.use('/resume',express.static('resume'))
 app.use('/user',userroute);
+app.use('/feedback',feedbackroute)
+app.use('/interview',validation,interviewroute)
 // app.use(cookieParser());
 
 
