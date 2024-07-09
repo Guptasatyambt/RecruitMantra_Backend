@@ -67,7 +67,6 @@ async function handleregister(req,res){
     
         const user=await User.findOne({email})
         if(!user){
-            
             res.status(404).json({message:"User not exist! please sign In"})
             // throw new Error("User not exist! please sign In")
         }
@@ -121,6 +120,7 @@ async function handleregister(req,res){
     res.status(201).json({message:"Insufficient Balance"})
     }
     }
+    
     async function givecoins(req,res){
         const email=req.user.email;
         const user=await User.findOne({email})
@@ -156,7 +156,7 @@ async function handleregister(req,res){
               console.error(`Internal error Failed to delete file: ${filePath}`, err);
             } 
           });
-        },   60*1000); // 10 minutes
+        },   10*60*1000); // 10 minutes
       }
 
     
