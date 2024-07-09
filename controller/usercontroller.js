@@ -1,7 +1,7 @@
 const {setuser}=require('../service/auth')
 const User=require('../models/usermodel');
 const bycrpt=require('bcrypt');
-const admin = require('firebase-admin');
+const fs=require('fs')
 
 
 
@@ -28,10 +28,9 @@ async function handleregister(req,res){
         specialization:"",
         interest:"",
     })
-    uid=user.id;
-    const customToken = await admin.auth().createCustomToken(uid);
+   
     const token=setuser(user);
-    return res.status(200).json({message:"Success",data:{token,customtoken:customToken,id:user.id,name:""}});
+    return res.status(200).json({message:"Success",data:{token,id:user.id,name:""}});
     }
      
     async function handledetails(req,res){
@@ -74,9 +73,7 @@ async function handleregister(req,res){
         }
         if(user&& (await bycrpt.compare(password,user.password))){
             const token=setuser(user);
-            uid=user.id
-            const customToken = await admin.auth().createCustomToken(uid);
-            res.status(200).json({message:"Success",data:{token,customtoken:customToken,id:user.id,name:user.name}});
+            res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}});
         }
         else{
             res.status(400).json({message:"Incorrect password"})
@@ -137,28 +134,30 @@ async function handleregister(req,res){
         res.status(200).json(updateduser)
     }
 
-    // async function firebaselogin(req,res){
-    //     const {uid} = req.body;
+    async function videoupload(req,res){
+        if (req.file === undefined) {
+            res.status(400).send('No file selected!');
+          } else {
+            const filePath = `uploads/${req.file.filename}`;
+            const accessUrl = `${req.protocol}://${req.get('host')}/${filePath}`;
+            res.send({
+              message: 'File uploaded!',
+              file: filePath,
+              url: accessUrl
+            });
+            deleteFile(filePath);
+          }
+    }
 
-    //     if (!uid) {
-    //       return res.status(400).send('UID is required');
-    //     }
-      
-    //     try {
-    //       const customToken = await admin.auth().createCustomToken(uid);
-    //     //   res.status(200).send(customToken);
-    //       res.status(200).json({message:"Success",data:{customToken}});
-    //     } catch (error) {
-    //       console.error('Error creating custom token:', error);
-    //       res.status(500).send('Error creating custom token');
-    //     }
-    // }
+     function deleteFile(filePath) {
+        setTimeout(() => {
+          fs.unlink(filePath, (err) => {
+            if (err) {
+              console.error(`Internal error Failed to delete file: ${filePath}`, err);
+            } 
+          });
+        },   60*1000); // 10 minutes
+      }
 
-    // async function developer(req,res){
-    //     try{
-    //         res.status(200).json({message:"routes",userroute:{/user/signin}})
-    //     }catch(e){
-    //         res.json({message:"some error accured"})
-    //     }
-    // }
-    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins};
+    
+    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins,videoupload};
