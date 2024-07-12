@@ -11,7 +11,7 @@ router.post('/login',handlelogin)
 router.get('/getinfo',validation,getinfo)
 router.get('/startinterview',validation,handlestart)
 router.post('/givecoins',validation,givecoins);
-router.post('/uploadvideo',validation,uploadvid.single('video'),videoupload);
+router.post('/uploadvideo',validation,uploadvid.single('video'),videoupload); // send "uid" and "video" in body
 
 
 // router.post('/firebaselogin',firebaselogin)

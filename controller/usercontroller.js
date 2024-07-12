@@ -135,12 +135,15 @@ async function handleregister(req,res){
     }
 
     async function videoupload(req,res){
-        if (req.file === undefined) {
+        const uid = req.body.uid;
+        if (!req.file) {
             res.status(400).send('No file selected!');
           } else {
             const filePath = `uploads/${req.file.filename}`;
             const accessUrl = `${req.protocol}://${req.get('host')}/${filePath}`;
-            res.send({
+            // return res.status(200).json({message:"Success",data:{token,id:user.id,name:""}});
+           
+            res.status(200).json({
               message: 'File uploaded!',
               file: filePath,
               url: accessUrl
