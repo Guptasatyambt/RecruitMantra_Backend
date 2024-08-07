@@ -1,11 +1,6 @@
 const mongoose=require("mongoose");
 
 const interviewSchema=new mongoose.Schema({
-    auther: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User' ,
-        required:true
-      },
       email:{
         type:String
       },
@@ -32,15 +27,14 @@ const interviewSchema=new mongoose.Schema({
         default:0
       },
       eye:{
-        type:Number
+        type:Number,
+        default:0,
       },
       neck:{
-        type:Number
+        type:Number,
+        default:0
       },
-      status:{
-        type:Boolean,
-        default:false,
-      }
+      
 
 },{timestamps:true});
 

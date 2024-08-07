@@ -7,6 +7,7 @@ const fs=require('fs')
 
 
 async function handleregister(req,res){
+    try{
     const{email,password} =req.body
     if(!email||!password){
         return res.status(400).json("All field are compulsory");
@@ -27,17 +28,23 @@ async function handleregister(req,res){
         year:"",
         specialization:"",
         interest:"",
+        interview:[],
     })
    
     const token=setuser(user);
     return res.status(200).json({message:"Success",data:{token,id:user.id,name:""}});
+}
+catch(e){
+    return res.status(500).json({ message: "Internal Server Error", error: e.message });
+}
     }
      
     async function handledetails(req,res){
-        const {name,college,branch,year,specialization,interest,resume,profileimage}=req.body
+        const {name,college,branch,year,specialization,interest}=req.body
         if(!name||!college||!branch||!year||!specialization||!interest&&req.file){
             return res.status(400).json("All field are compulsory");
         }
+        try{
         const user=req.user;
     const email=user.email;
     const password=user.password;
@@ -53,9 +60,14 @@ async function handleregister(req,res){
         year:year,
         specialization:specialization,
         interest:interest,
+        interview:[],
     }}
     ,{new:true})
-    res.status(200).json({message:"Success",data:{email:email}});
+    return res.status(200).json({message:"Success",data:{email:email}});
+}
+catch(e){
+    return res.status(500).json({ message: "Internal Server Error", error: e.message });
+}
     }
 
     async function handlelogin(req,res){
@@ -64,19 +76,23 @@ async function handleregister(req,res){
             res.status(400).json({message:"enter details correctly"})
             // throw new Error("enter details correctly")
         }
-    
+        try{
         const user=await User.findOne({email})
         if(!user){
-            res.status(404).json({message:"User not exist! please sign In"})
+            return res.status(404).json({message:"User not exist! please sign In"})
             // throw new Error("User not exist! please sign In")
         }
         if(user&& (await bycrpt.compare(password,user.password))){
             const token=setuser(user);
-            res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}});
+            return res.status(200).json({message:"Success",data:{token,id:user.id,name:user.name}});
         }
         else{
-            res.status(400).json({message:"Incorrect password"})
+            return res.status(400).json({message:"Incorrect password"})
         }
+    }
+    catch(e){
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
     }
 
     async function getinfo(req,res){
@@ -85,12 +101,14 @@ async function handleregister(req,res){
             const email=req.user.email;
             const user=await User.findOne({email})
             return res.status(200).json(user);
-        }catch(e){
-             res.status(401).json({message:"sorry"})
+        }
+        catch(e){
+            return res.status(500).json({ message: "Internal Server Error", error: e.message });
         }
     }
 
     async function handlestart(req,res){
+        try{
         const email=req.user.email;
         const user=await User.findOne({email})
         const level=req.query.level
@@ -113,12 +131,16 @@ async function handleregister(req,res){
              coins:coin,
          }}
          ,{new:true})
-         res.status(200).json(updateduser)
+         return res.status(200).json({message:"Success",data:{coins:coin}})
         
     }
     else{
-    res.status(201).json({message:"Insufficient Balance"})
+    return res.status(201).json({message:"Insufficient Balance"})
     }
+}
+catch(e){
+    return res.status(500).json({ message: "Internal Server Error", error: e.message });
+}
     }
     
     async function givecoins(req,res){
@@ -131,10 +153,11 @@ async function handleregister(req,res){
             coins:coins,
         }}
         ,{new:true})
-        res.status(200).json(updateduser)
+        return res.status(200).json(updateduser)
     }
 
     async function videoupload(req,res){
+        try{
         const uid = req.body.uid;
         if (!req.file) {
             res.status(400).send('No file selected!');
@@ -150,6 +173,10 @@ async function handleregister(req,res){
             });
             deleteFile(filePath);
           }
+        }
+        catch(e){
+            return res.status(500).json({ message: "Internal Server Error", error: e.message });
+        }
     }
 
      function deleteFile(filePath) {

@@ -1,4 +1,5 @@
 const mongoose=require("mongoose");
+const Interview=require('./interview')
 
 const userSchema=new mongoose.Schema({
     email:{
@@ -45,7 +46,11 @@ const userSchema=new mongoose.Schema({
     interest:{
         type:String,
         require:true,
-    }
+    },
+    interview: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: Interview,
+    }],
 },{timestamps:true});
 
 const USER=mongoose.model('user',userSchema);

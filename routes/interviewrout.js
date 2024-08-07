@@ -1,12 +1,15 @@
 const express = require('express');
-const{handlestart,handlestop, getinfo,givecoin,getinfoone}=require('../controller/interview')
+const{handlestop, getinfo}=require('../controller/interview')
 const router=express.Router();
 
-router.post('/start',handlestart);  //send query of level
-router.post('/stop/:id',handlestop)   //send result,confidence,accuracy,eye,neck in body and id of interview in params
+router.post('/stop',handlestop)   //send level,result,confidence,accuracy,eye,neck,complete in body and token
 router.get('/getdetail',getinfo)  //nothing to send
-router.post('/givecoins',givecoin); //give query of level and result
-router.get('/getinfo/:interviewid',getinfoone); //give params of id
-
-
 module.exports=router
+
+// router.post('/signin',handleregister);
+// router.post('/uploadinfo',validation,upload.fields([{ name: 'profileimage', maxCount: 1 }, { name: 'resume', maxCount: 1 }]),handledetails)
+// router.post('/login',handlelogin)
+// router.get('/getinfo',validation,getinfo)
+// router.get('/startinterview',validation,handlestart)
+// router.post('/givecoins',validation,givecoins);
+// router.post('/uploadvideo',validation,uploadvid.single('video'),videoupload); // send "uid" and "video" in body
