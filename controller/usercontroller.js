@@ -2,6 +2,7 @@ const {setuser}=require('../service/auth')
 const User=require('../models/usermodel');
 const bycrpt=require('bcrypt');
 const fs=require('fs')
+const isEmailValid=require('../middleware/email_validate')
 
 
 
@@ -21,7 +22,7 @@ async function handleregister(req,res){
   }
     const allReadyExist=await User.findOne({email})
     if(allReadyExist){
-        return res.status(403).json({message:"User Exist"})
+        return res.status(403).json({message:"User already Exist"})
     }
     const bycrptpassword=await bycrpt.hash(password,10)
     const user=await User.create({
