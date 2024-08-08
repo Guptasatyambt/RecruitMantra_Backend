@@ -10,11 +10,18 @@ async function handleregister(req,res){
     try{
     const{email,password} =req.body
     if(!email||!password){
-        return res.status(400).json("All field are compulsory");
+        return res.status(404).json({message:"All field are compulsory"});
     }
+    const {valid, reason, validators} = await isEmailValid(email);
+    if (!valid) {
+    return res.status(401).json({
+      message: "Please provide a valid email address.",
+      reason: validators[reason].reason
+    })
+  }
     const allReadyExist=await User.findOne({email})
     if(allReadyExist){
-        return res.status(400).json("User Exist")
+        return res.status(403).json({message:"User Exist"})
     }
     const bycrptpassword=await bycrpt.hash(password,10)
     const user=await User.create({
