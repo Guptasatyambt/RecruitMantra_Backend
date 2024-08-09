@@ -1,5 +1,6 @@
 const mongoose=require("mongoose");
-const Interview=require('./interview')
+const Interview=require('./interview');
+const { required } = require("nodemon/lib/config");
 
 const userSchema=new mongoose.Schema({
     email:{
@@ -48,8 +49,9 @@ const userSchema=new mongoose.Schema({
         require:true,
     },
     interview: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: Interview,
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Interview',required:true },
+        result: Number
     }],
 },{timestamps:true});
 

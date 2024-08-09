@@ -20,7 +20,7 @@ async function handlestop(req, res) {
 
     const user = await User.findOne({ email });
     var coin=user.coins;
-    if(complete==1){
+    if(complete=="1"){
     var reward=0
         if(level=='beginner'){
            reward=10+result
@@ -34,7 +34,8 @@ async function handlestop(req, res) {
         coin=coin+reward
     }
     var user_interview=user.interview;
-    user_interview.push(interview.id);
+    var id=interview.id
+    user_interview.push({interview_id:id,result:result});
     const updateduser= await User.findByIdAndUpdate(user._id,
                      {$set:{
                      coins:coin,
