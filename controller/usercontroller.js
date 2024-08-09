@@ -2,7 +2,8 @@ const {setuser}=require('../service/auth')
 const User=require('../models/usermodel');
 const bycrpt=require('bcrypt');
 const fs=require('fs')
-const isEmailValid=require('../middleware/email_validate')
+const isEmailValid=require('../middleware/email_validate');
+const { profile } = require('console');
 
 
 
@@ -13,13 +14,7 @@ async function handleregister(req,res){
     if(!email||!password){
         return res.status(404).json({message:"All field are compulsory"});
     }
-    const {valid, reason, validators} = await isEmailValid(email);
-    if (!valid) {
-    return res.status(401).json({
-      message: "Please provide a valid email address.",
-      reason: validators[reason].reason
-    })
-  }
+   
     const allReadyExist=await User.findOne({email})
     if(allReadyExist){
         return res.status(403).json({message:"User already Exist"})
@@ -61,8 +56,8 @@ catch(e){
         name:name,
         email:email,
         password:password,
-        resume:req.files['resume'][0].path,
-        profileimage:req.files['profileimage'][0].path,
+        resume:req.files['resume'][0].path.replace(/\\/g, '/') ,
+        profileimage:req.files['profileimage'][0].path.replace(/\\/g, '/') ,
         college:college,
         branch:branch,
         year:year,
@@ -71,7 +66,7 @@ catch(e){
         interview:[],
     }}
     ,{new:true})
-    return res.status(200).json({message:"Success",data:{email:email}});
+    return res.status(200).json({message:"Success",data:{email:email,profile:updateduser.profileimage,resume:updateduser.resume}});
 }
 catch(e){
     return res.status(500).json({ message: "Internal Server Error", error: e.message });
@@ -197,5 +192,55 @@ catch(e){
         },   10*60*1000); // 10 minutes
       }
 
+      async function handleimage(req,res) {
+        try{
+            const user=req.user;
+        const updateduser= await User.findByIdAndUpdate(user._id,
+            {$set:{
+            profileimage:req.file.path.replace(/\\/g, '/') ,
+        }}
+        ,{new:true})
+        console.log(req.file.path.replace(/\\/g, '/') )
+        return res.status(200).json({message:"Success",data:{profile:updateduser.profileimage}});
+    }
+    catch(e){
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+      }
+
+      async function updateresume(req,res) {
+        try{
+            const user=req.user;
+        const updateduser= await User.findByIdAndUpdate(user._id,
+            {$set:{
+            resume:req.file.path.replace(/\\/g, '/') ,
+        }}
+        ,{new:true})
+        console.log(req.file.path.replace(/\\/g, '/') )
+        return res.status(200).json({message:"Success",data:{resume:updateduser.resume}});
+    }
+    catch(e){
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+      }
+
+      async function updateyear(req,res) {
+        const {year}=req.body
+        console.log(year)
+        try{
+            
+            const user=req.user;
+        const updateduser= await User.findByIdAndUpdate(user._id,
+            {$set:{
+            year:year ,
+        }}
+        ,{new:true})
+        return res.status(200).json({message:"Success",data:{year:updateduser.year}});
+    }
+    catch(e){
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+      }
+
     
-    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins,videoupload};
+    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins,videoupload,handleimage,updateyear,updateresume};
