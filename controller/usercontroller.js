@@ -4,6 +4,7 @@ const bycrpt=require('bcrypt');
 const fs=require('fs')
 const isEmailValid=require('../middleware/email_validate');
 const { profile } = require('console');
+const {getobjecturl,putObject}=require('../middleware/aws')
 
 
 
@@ -159,42 +160,24 @@ catch(e){
         return res.status(200).json(updateduser)
     }
 
-    async function videoupload(req,res){
-        try{
-        const uid = req.body.uid;
-        if (!req.file) {
-            res.status(400).send('No file selected!');
-          } else {
-            const filePath = `uploads/${req.file.filename}`;
-            const accessUrl = `${req.protocol}://${req.get('host')}/${filePath}`;
-            // return res.status(200).json({message:"Success",data:{token,id:user.id,name:""}});
-           
-            res.status(200).json({
-              message: 'File uploaded!',
-              file: filePath,
-              url: accessUrl
-            });
-            deleteFile(filePath);
-          }
-        }
-        catch(e){
-            return res.status(500).json({ message: "Internal Server Error", error: e.message });
-        }
-    }
+    
 
-     function deleteFile(filePath) {
-        setTimeout(() => {
-          fs.unlink(filePath, (err) => {
-            if (err) {
-              console.error(`Internal error Failed to delete file: ${filePath}`, err);
-            } 
-          });
-        },   10*60*1000); // 10 minutes
-      }
+    //  function deleteFile(filePath) {
+    //     setTimeout(() => {
+    //       fs.unlink(filePath, (err) => {
+    //         if (err) {
+    //           console.error(`Internal error Failed to delete file: ${filePath}`, err);
+    //         } 
+    //       });
+    //     },   10*60*1000); // 10 minutes
+    //   }
 
       async function handleimage(req,res) {
         try{
             const user=req.user;
+            // const img=await getobjecturl("133507648727420508.jpg")
+            const url=await putObject(`image-${Date.now()}.jpeg`,"image/jpeg")
+            console.log(url);
         const updateduser= await User.findByIdAndUpdate(user._id,
             {$set:{
             profileimage:req.file.path.replace(/\\/g, '/') ,
@@ -243,4 +226,4 @@ catch(e){
       }
 
     
-    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins,videoupload,handleimage,updateyear,updateresume};
+    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins,handleimage,updateyear,updateresume};

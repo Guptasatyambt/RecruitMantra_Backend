@@ -8,6 +8,9 @@ const interviewSchema=new mongoose.Schema({
         type:String,
         required:true
       },
+      video:{
+        type:String,
+      },
       result:{
         type:Number,
         min:0,
