@@ -125,6 +125,8 @@ async function videoupload(req,res){
     try{
     const {interview_id} = req.body;
     const key = `VID-${interview_id}-${Date.now()}.mp4`;
+    console.log(`uploads/user-uploads/${key}`)
+    console.log(key)
     const interview= await InterView.findByIdAndUpdate(interview_id,
         {$set:{
         video:`uploads/user-uploads/${key}`
@@ -141,11 +143,19 @@ async function videoupload(req,res){
 }
 async function getVideoUrl(req,res){
     try{
-    const {interview_id} = req.body;
-    const interview=await InterView.findById(interview_id)
-    console.log(interview)
-    const video_url=await getobjecturl(interview.video)
-     
+    const key = req.query.key;
+    const video_url=await getobjecturl(key)
+    res.status(200).json({message:"success",url:video_url})
+  
+    }
+    catch(e){
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+}
+
+async function ackServer(req,res){
+    try{
+    
     res.status(200).json({message:"success",url:video_url})
   
     }
@@ -155,12 +165,16 @@ async function getVideoUrl(req,res){
 }
 
 
+
+
 async function getinfo(req, res) {      
     try{
-        const {interview_id} = req.body;
+        const interview_id = req.query.interview_id;
+        console.log(interview_id)
         const interview=await InterView.findById(interview_id)
+        const video_url=await getobjecturl(interview.video);
         console.log(interview)
-        res.status(200).json({message:"success",interview})
+        res.status(200).json({message:"success",Interview:interview,url:video_url})
       
         }
         catch(e){
@@ -171,4 +185,4 @@ async function getinfo(req, res) {
 
 
 
-module.exports = {handlestart,handlestop, getinfo,videoupload,getVideoUrl};
+module.exports = {handlestart,handlestop, getinfo,videoupload,getVideoUrl,ackServer};

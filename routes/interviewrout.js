@@ -1,13 +1,14 @@
 const express = require('express');
-const{handlestart,handlestop, getinfo,videoupload,getVideoUrl}=require('../controller/interview')
+const{handlestart,handlestop, getinfo,videoupload,getVideoUrl,ackServer}=require('../controller/interview')
 const router=express.Router();
 const{validation}=require('../service/auth')
 
 router.post('/start',handlestart) //send level in query  {responce ex-"id": "66db52efa80c2e8e838b7f76"}
 router.post('/stop',handlestop)   //send interview_id,result,confidence,accuracy,eye,neck,complete in body and token
-router.get('/getdetail',getinfo)  // send (interview) id
+router.get('/getdetail',getinfo)  // send  interview_id
 router.post('/uploadvideo',validation,videoupload); // send "interview_id" and "video" in body
 router.get('/getUrl',getVideoUrl)   // sent interview_id in body
+router.post('/ackServer',ackServer);
 module.exports=router
 
 // router.post('/signin',handleregister);

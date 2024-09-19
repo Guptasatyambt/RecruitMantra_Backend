@@ -5,6 +5,10 @@ const fs=require('fs')
 const isEmailValid=require('../middleware/email_validate');
 const { profile } = require('console');
 const {getobjecturl,putObject}=require('../middleware/aws')
+const nodemailer = require('nodemailer');
+const { findByIdAndUpdate } = require('../models/interview');
+
+let otpStore = {};
 
 
 
@@ -110,42 +114,6 @@ catch(e){
             return res.status(500).json({ message: "Internal Server Error", error: e.message });
         }
     }
-
-    async function handlestart(req,res){
-        try{
-        const email=req.user.email;
-        const user=await User.findOne({email})
-        const level=req.query.level
-        let coin=user.coins;
-        let fee=50
-        if(level=='beginner'){
-            fee=10  
-        }
-        if(level=='intermidiate'){
-            fee=15
-        }
-        if(level=='advance'){
-            fee=25
-        }
-    
-    if(coin>=fee){
-        coin=coin-fee;
-        const updateduser= await User.findByIdAndUpdate(user._id,
-             {$set:{
-             coins:coin,
-         }}
-         ,{new:true})
-         return res.status(200).json({message:"Success",data:{coins:coin}})
-        
-    }
-    else{
-    return res.status(201).json({message:"Insufficient Balance"})
-    }
-}
-catch(e){
-    return res.status(500).json({ message: "Internal Server Error", error: e.message });
-}
-    }
     
     async function givecoins(req,res){
         const email=req.user.email;
@@ -160,17 +128,108 @@ catch(e){
         return res.status(200).json(updateduser)
     }
 
+    async function updatepassword(req,res){
+        const {email,password}=req.body;
+        try{
+        const user=await User.findOne({email})
+        if(!user){
+            return res.status(404).json({message:"No user find"})
+        }
+        const bycrptpassword=await bycrpt.hash(password,10)
+        const updateduser= await User.findByIdAndUpdate(user._id,
+            {$set:{
+            password:bycrptpassword ,
+        }}
+        ,{new:true})
+        return res.status(200).json({message:"Password set successfully"});
     
+    }catch(e){
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
 
-    //  function deleteFile(filePath) {
-    //     setTimeout(() => {
-    //       fs.unlink(filePath, (err) => {
-    //         if (err) {
-    //           console.error(`Internal error Failed to delete file: ${filePath}`, err);
-    //         } 
-    //       });
-    //     },   10*60*1000); // 10 minutes
-    //   }
+    }
+
+    async function generateAndSendOTP(req, res) {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+    
+        try {
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            const expiryTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
+            otpStore[email] = {
+                otp,
+                expiresAt: expiryTime,
+                isUsed: false
+            };
+           
+            let transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER, // Use environment variables for security
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+    
+            // Email options
+            let mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Your One-Time Password (OTP) for Password Reset',
+                text: `
+    Dear user,
+    
+    We received a request to reset the password for your account. Please use the following One-Time Password (OTP) to proceed with the reset:
+    
+    Your OTP: ${otp}
+    
+    This OTP is valid for one-time use only and will expire in 15 minutes. If you did not request a password reset, please ignore this email.
+    
+    Best regards,
+    InternView` };
+            const info = await transporter.sendMail(mailOptions);
+            return res.status(200).json({ message: 'OTP sent to email successfully' });
+        } catch (error) {
+            return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+        }
+    }
+
+    async function validateotp(req,res) {
+    const{email,otp}=req.body;
+    try{
+        const storedOtpData = otpStore[email];
+
+        if (!storedOtpData) {
+            return res.status(404).json({ success: false, message: 'OTP not found or expired' });
+        }
+    
+        const currentTime = Date.now();
+    
+        // Check if OTP is expired
+        if (currentTime > storedOtpData.expiresAt) {
+            delete otpStore[email];  // Delete expired OTP
+            return res.status(400).json({ success: false, message: 'OTP is expired' });
+        }
+    
+        // Check if OTP has already been used
+        if (storedOtpData.isUsed) {
+            return res.status(400).json({ success: false, message: 'OTP is already used' });
+         }
+    
+        // Check if entered OTP matches the stored OTP
+        if (storedOtpData.otp !== parseInt(otp)) {
+            return res.status(400).json({ success: false, message: 'Invalid OTP' });
+        }
+    
+        // Mark OTP as used
+        otpStore[email].isUsed = true;
+        delete otpStore[email];  // Optionally delete OTP after use
+        return res.status(200).json({ success: true, message: 'OTP verified successfully' });
+    }catch(e){
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+    }
 
       async function handleimage(req,res) {
         try{
@@ -209,7 +268,6 @@ catch(e){
 
       async function updateyear(req,res) {
         const {year}=req.body
-        console.log(year)
         try{
             
             const user=req.user;
@@ -226,4 +284,4 @@ catch(e){
       }
 
     
-    module.exports={handleregister,handledetails ,handlelogin,getinfo,handlestart,givecoins,handleimage,updateyear,updateresume};
+    module.exports={handleregister,handledetails ,handlelogin,getinfo,givecoins,handleimage,updateyear,updateresume,generateAndSendOTP,validateotp,updatepassword};
