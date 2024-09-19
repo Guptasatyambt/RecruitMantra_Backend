@@ -3,10 +3,10 @@ const{handlestart,handlestop, getinfo,videoupload,getVideoUrl,ackServer}=require
 const router=express.Router();
 const{validation}=require('../service/auth')
 
-router.post('/start',handlestart) //send level in query  {responce ex-"id": "66db52efa80c2e8e838b7f76"}
+router.post('/start',handlestart) //send level in body  {responce ex-"id": "66db52efa80c2e8e838b7f76"}
 router.post('/stop',handlestop)   //send interview_id,result,confidence,accuracy,eye,neck,complete in body and token
 router.get('/getdetail',getinfo)  // send  interview_id
-router.post('/uploadvideo',validation,videoupload); // send "interview_id" and "video" in body
+router.post('/uploadvideo',validation,videoupload); // send "interview_id"  body
 router.get('/getUrl',getVideoUrl)   // sent interview_id in body
 router.post('/ackServer',ackServer);
 module.exports=router

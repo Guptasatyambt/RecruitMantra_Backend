@@ -7,7 +7,7 @@ async function handlestart(req,res){
     try{
     const email=req.user.email;
     const user=await User.findOne({email})
-    const level=req.query.level
+    const {level}=req.body
     let coin=user.coins;
     let fee=50
     if(level=='beginner'){
@@ -156,7 +156,7 @@ async function getVideoUrl(req,res){
 async function ackServer(req,res){
     try{
     
-    res.status(200).json({message:"success",url:video_url})
+    res.status(200).json({message:"success"})
   
     }
     catch(e){
