@@ -4,7 +4,7 @@ const bycrpt = require('bcrypt');
 const fs = require('fs')
 const isEmailValid = require('../middleware/email_validate');
 const { profile } = require('console');
-const { getobjecturl, putObject, putObjectimage, putObjectresume } = require('../middleware/aws')
+const { getobjecturl, putObject, putObjectimage, putObjectresume,getobjecturlassets } = require('../middleware/aws')
 const nodemailer = require('nodemailer');
 const { findByIdAndUpdate } = require('../models/interview');
 
