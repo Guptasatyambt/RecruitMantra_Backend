@@ -376,7 +376,7 @@ async function handleimage(req, res) {
     try {
         const user = req.user;
         const image_key = `IMG-${user._id}-${Date.now()}.jpg`;
-        const url = await putObject(image_key, "image/jpg")
+        const url = await putObjectimage(image_key, "image/jpg")
         const updateduser = await User.findByIdAndUpdate(user._id,
             {
                 $set: {
@@ -396,6 +396,7 @@ async function updateresume(req, res) {
         const user = req.user;
 
         const resume_key = `file-${user._id}-${Date.now()}.pdf`;
+        const resume_url = await putObjectresume(resume_key, "application/pdf")
         const updateduser = await User.findByIdAndUpdate(user._id,
             {
                 $set: {
@@ -403,7 +404,7 @@ async function updateresume(req, res) {
                 }
             }
             , { new: true })
-        const resume_url = await putObjectresume(resume_key, "application/pdf")
+        
         return res.status(200).json({ message: "Success", data: { resume: resume_url } });
     }
     catch (e) {
