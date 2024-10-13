@@ -179,7 +179,6 @@ async function handlestop(req, res) {
     }
 }
 
-
 async function videoupload(req, res) {
     try {
         const { interview_id, question_number } = req.body;
@@ -207,6 +206,7 @@ async function videoupload(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
+
 async function getVideoUrl(req, res) {
     try {
         const key = req.query.key;
@@ -229,9 +229,6 @@ async function ackServer(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
-
-
 
 async function getinfo(req, res) {
     try {
@@ -256,7 +253,13 @@ async function getinfo(req, res) {
 }
 
 
-
-
-
-module.exports = { handlestart, handlestop, getinfo, videoupload, getVideoUrl, ackServer, insertConfidence, insertAccuracy };
+module.exports = {
+    handlestart,
+    handlestop,
+    getinfo,
+    videoupload,
+    getVideoUrl,
+    ackServer,
+    insertConfidence,
+    insertAccuracy
+};

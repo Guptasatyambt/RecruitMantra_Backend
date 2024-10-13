@@ -2,15 +2,10 @@ const { setuser } = require('../service/auth')
 const User = require('../models/usermodel');
 const bycrpt = require('bcrypt');
 const fs = require('fs')
-const isEmailValid = require('../middleware/email_validate');
-const { profile } = require('console');
-const { getobjecturl, putObject, putObjectimage, putObjectresume,getobjecturlassets } = require('../middleware/aws')
+const { putObjectimage, putObjectresume, getobjecturlassets } = require('../middleware/aws')
 const nodemailer = require('nodemailer');
-const { findByIdAndUpdate } = require('../models/interview');
 
 let otpStore = {};
-
-
 
 
 async function handleregister(req, res) {
@@ -139,9 +134,23 @@ async function getinfo(req, res) {
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
         }
-        const image_url = getobjecturlassets(user.profileimage)
-        const resume_url = getobjecturlassets(user.resume)
+        const image_url = await getobjecturlassets(user.profileimage)
+        const resume_url = await getobjecturlassets(user.resume)
         return res.status(200).json({ user, image: image_url, resume: resume_url });
+    }
+    catch (e) {
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+}
+
+async function getcoin(req,res){
+    try {
+        const email = req.user.email;
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(404).json({ message: "No user found with this email" })
+        }
+        return res.status(200).json({coin:user.coins});
     }
     catch (e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
@@ -278,7 +287,7 @@ async function validateotp(req, res) {
 async function sendVarifyEmailOtp(req, res) {
     const user = req.user;
     const email = user.email;
-    
+
     if (!email) {
         return res.status(400).json({ message: 'Email is required' });
     }
@@ -376,11 +385,12 @@ async function handleimage(req, res) {
     try {
         const user = req.user;
         const image_key = `IMG-${user._id}-${Date.now()}.jpg`;
+        const path = `images/${image_key}`
         const url = await putObjectimage(image_key, "image/jpg")
         const updateduser = await User.findByIdAndUpdate(user._id,
             {
                 $set: {
-                    profileimage: image_key,
+                    profileimage: path,
                 }
             }
             , { new: true })
@@ -396,15 +406,16 @@ async function updateresume(req, res) {
         const user = req.user;
 
         const resume_key = `file-${user._id}-${Date.now()}.pdf`;
+        const path_resume = `resume/${resume_key}`
         const resume_url = await putObjectresume(resume_key, "application/pdf")
         const updateduser = await User.findByIdAndUpdate(user._id,
             {
                 $set: {
-                    resume: resume_key,
+                    resume: path_resume,
                 }
             }
             , { new: true })
-        
+
         return res.status(200).json({ message: "Success", data: { resume: resume_url } });
     }
     catch (e) {
@@ -432,4 +443,20 @@ async function updateyear(req, res) {
 }
 
 
-module.exports = { handleregister, handledetails, handlelogin, getinfo, givecoins, handleimage, updateyear, updateresume, generateAndSendOTP, validateotp, updatepassword, uploadassets, sendVarifyEmailOtp ,validateEmailotp};
+module.exports = {
+    handleregister,
+    handledetails,
+    handlelogin,
+    getinfo,
+    getcoin,
+    givecoins,
+    handleimage,
+    updateyear,
+    updateresume,
+    generateAndSendOTP,
+    validateotp,
+    updatepassword,
+    uploadassets,
+    sendVarifyEmailOtp,
+    validateEmailotp
+};
