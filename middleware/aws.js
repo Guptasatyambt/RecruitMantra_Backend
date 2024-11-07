@@ -34,6 +34,8 @@ async function getobjecturlassets(key) {
     const command = new GetObjectCommand({
         Bucket: process.env.IMAGE_BUCKET,
         Key: key
+        ResponseContentDisposition:'inline',
+        ResponseContentType: 'application/pdf',
     });
     const url = await getSignedUrl(s3Client, command);
     return url;
