@@ -1,13 +1,15 @@
 const { setuser } = require('../service/auth')
 const User = require('../models/usermodel');
-const bycrpt = require('bcrypt');
+const emailvarification=require('../middleware/email_validate')
+const bycrpt = require('bcryptjs');
 const fs = require('fs')
 const { putObjectimage, putObjectresume, getobjecturlassets } = require('../middleware/aws')
 const nodemailer = require('nodemailer');
 
 let otpStore = {};
-
-
+async function test(req,res) {
+return res.status(200).json({message:"Server is running"});
+}
 async function handleregister(req, res) {
     try {
         const { email, password } = req.body
@@ -20,6 +22,8 @@ async function handleregister(req, res) {
             return res.status(403).json({ message: "User already Exist" })
         }
         const bycrptpassword = await bycrpt.hash(password, 10)
+	const isEmailValidate= await emailvarification(email)
+
         const user = await User.create({
             name: "",
             email: email,
@@ -237,7 +241,7 @@ async function generateAndSendOTP(req, res) {
     This OTP is valid for one-time use only and will expire in 15 minutes. If you did not request a password reset, please ignore this email.
     
     Best regards,
-    InternView` };
+    RecruitMantra` };
         const info = await transporter.sendMail(mailOptions);
         setTimeout(() => {
             delete otpStore[email]; // Remove the OTP after 15 minutes
@@ -321,7 +325,7 @@ async function sendVarifyEmailOtp(req, res) {
             text: `
     Dear user,
 
-Thank you for registering with InternView. To complete your registration and verify your email address, please use the following One-Time Password (OTP):
+Thank you for registering with RecruitMantra. To complete your registration and verify your email address, please use the following One-Time Password (OTP):
 
 Your OTP: ${otp}
 
@@ -330,7 +334,7 @@ This OTP is valid for one-time use only and will expire in 15 minutes. If you di
 Verifying your email helps us ensure the security of your account.
 
 Best regards,  
-- InternView Team` };
+- RecruitMantra` };
         const info = await transporter.sendMail(mailOptions);
         // setTimeout(() => {
         //     delete otpStore[email]; // Remove the OTP after 15 minutes
@@ -458,5 +462,6 @@ module.exports = {
     updatepassword,
     uploadassets,
     sendVarifyEmailOtp,
-    validateEmailotp
+    validateEmailotp,
+   test
 };

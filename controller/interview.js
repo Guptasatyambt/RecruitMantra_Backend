@@ -99,10 +99,10 @@ async function insertAccuracy(req, res) {
 async function handlestop(req, res) {
     try {
 
-        const { email, interview_id, complete } = req.body;
-
+        const {interview_id} = req.body;
+	const email = req.user.email;
         // Validate required fields
-        if (email == null || interview_id == null || complete == null) {
+        if ( interview_id == null) {
             return res.status(400).json("All fields are compulsory");
         }
         const interview = await InterView.findById(interview_id);
@@ -144,9 +144,8 @@ async function handlestop(req, res) {
         }
 
         let coin = user.coins;
-        // Calculate reward if interview is complete
-        if (complete == "1" || complete === 1) {
-            let reward = 0;
+        // Calculate reward if interview is complete 
+           let reward = 0;
             if (level === 'beginner') {
                 reward = 10 + parseInt(result);
             } else if (level === 'intermediate') {
@@ -155,7 +154,6 @@ async function handlestop(req, res) {
                 reward = 25 + parseInt(result) * 5;
             }
             coin += reward;
-        }
 
         // Update user's interview list
         let user_interview = user.interview;
@@ -199,7 +197,8 @@ async function videoupload(req, res) {
             , { new: true })
 
         const url = await putObject(key_send, "video/mp4")
-        res.status(200).json({ message: "success", key: url })
+	const video_link = await getobjecturl(path)
+        res.status(200).json({ message: "success", key: url,video_url:video_link })
 
     }
     catch (e) {
