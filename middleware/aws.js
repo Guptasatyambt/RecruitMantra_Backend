@@ -33,7 +33,7 @@ async function putObject(filename, contentType) {
 async function getobjecturlassets(key) {
     const command = new GetObjectCommand({
         Bucket: process.env.IMAGE_BUCKET,
-        Key: key
+        Key: key,
         ResponseContentDisposition:'inline',
         ResponseContentType: 'application/pdf',
     });

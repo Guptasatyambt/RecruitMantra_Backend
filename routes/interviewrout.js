@@ -7,7 +7,7 @@ const{validation}=require('../service/auth')
 router.post('/start',validation,handlestart) //send level in body  {responce ex-"id": "66db52efa80c2e8e838b7f76"}
 
 //called from video model when answer of all questions are updated
-router.post('/stop',handlestop)   //send interview_id,result,confidence,accuracy,eye,neck,complete in body and token
+router.post('/stop',validation,handlestop)   //send interview_id,result,confidence,accuracy,eye,neck,complete in body and token
 
 //get detail of one perticuler interview
 router.get('/getdetail',validation,getinfo)  // send  interview_id
