@@ -40,6 +40,16 @@ async function getobjecturlassets(key) {
     const url = await getSignedUrl(s3Client, command);
     return url;
 }
+async function getobjecturlimage(key) {
+    const command = new GetObjectCommand({
+        Bucket: process.env.IMAGE_BUCKET,
+        Key: key,
+        ResponseContentDisposition:'inline',
+        ResponseContentType: 'image/jpg',
+    });
+    const url = await getSignedUrl(s3Client, command);
+    return url;
+}
 
 
 async function putObjectimage(filename, contentType) {
@@ -60,4 +70,4 @@ async function putObjectresume(filename, contentType) {
     const url = await getSignedUrl(s3Client, command);
     return url;
 }
-module.exports = { getobjecturl, putObject, getobjecturlassets, putObjectimage, putObjectresume }
+module.exports = { getobjecturl, putObject, getobjecturlassets, putObjectimage, putObjectresume,getobjecturlimage }
