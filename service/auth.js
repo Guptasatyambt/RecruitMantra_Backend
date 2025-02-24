@@ -27,12 +27,12 @@ function getUser(token) {
         token=authheader.split(" ")[1];
         if(!token){
             res.status(401);
-            throw new Error("Anuthrised User");
+            throw new Error("Unauthrised User");
         }
         jwt.verify(token,process.env.secret,(err,decode)=>{
             if(err){
                 res.status(401)
-                throw new Error("Anauthrised user")
+                throw new Error("Unauthrised user")
             }
             req.user=decode;
             next();
