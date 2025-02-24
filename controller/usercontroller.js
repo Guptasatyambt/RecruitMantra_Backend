@@ -3,7 +3,7 @@ const User = require('../models/usermodel');
 const emailvarification=require('../middleware/email_validate')
 const bycrpt = require('bcryptjs');
 const fs = require('fs')
-const { putObjectimage, putObjectresume, getobjecturlassets } = require('../middleware/aws')
+const { putObjectimage, putObjectresume, getobjecturlassets, getobjecturlimage } = require('../middleware/aws')
 const nodemailer = require('nodemailer');
 
 let otpStore = {};
@@ -47,6 +47,18 @@ async function handleregister(req, res) {
 }
 
 async function uploadassets(req, res) {
+    // const user = req.user;
+    // const image_key = `IMG-${user._id}-${Date.now()}.jpg`;
+    // const path = `images/${image_key}`
+    // const url = await putObjectimage(image_key, "image/jpg")
+    // const updateduser = await User.findByIdAndUpdate(user._id,
+    //     {
+    //         $set: {
+    //             profileimage: path,
+    //         }
+    //     }
+    //     , { new: true })
+    // return res.status(200).json({ message: "Success", data: { profile: url } });
     try {
         const user = req.user;
         const user_id = user._id;
@@ -104,7 +116,6 @@ async function handledetails(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
 async function handlelogin(req, res) {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -129,7 +140,6 @@ async function handlelogin(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
 async function getinfo(req, res) {
 
     try {
@@ -138,7 +148,7 @@ async function getinfo(req, res) {
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
         }
-        const image_url = await getobjecturlassets(user.profileimage)
+        const image_url = await getobjecturlimage(user.profileimage)
         const resume_url = await getobjecturlassets(user.resume)
         return res.status(200).json({ user, image: image_url, resume: resume_url });
     }
@@ -146,7 +156,6 @@ async function getinfo(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
 async function getcoin(req,res){
     try {
         const email = req.user.email;
@@ -160,7 +169,6 @@ async function getcoin(req,res){
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
 async function givecoins(req, res) {
     const email = req.user.email;
     const user = await User.findOne({ email })
@@ -175,7 +183,6 @@ async function givecoins(req, res) {
         , { new: true })
     return res.status(200).json(updateduser)
 }
-
 async function updatepassword(req, res) {
     const { email, password } = req.body;
     try {
@@ -198,7 +205,6 @@ async function updatepassword(req, res) {
     }
 
 }
-
 async function generateAndSendOTP(req, res) {
     const { email } = req.body;
     if (!email) {
@@ -287,7 +293,6 @@ async function validateotp(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
 async function sendVarifyEmailOtp(req, res) {
     const user = req.user;
     const email = user.email;
@@ -344,8 +349,6 @@ Best regards,
         return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 }
-
-
 async function validateEmailotp(req, res) {
     const user = req.user;
     const email = user.email;
@@ -384,7 +387,6 @@ async function validateEmailotp(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
 async function handleimage(req, res) {
     try {
         const user = req.user;
