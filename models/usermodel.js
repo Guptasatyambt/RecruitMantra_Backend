@@ -1,6 +1,5 @@
 const mongoose=require("mongoose");
 const Interview=require('./interview');
-const { required } = require("nodemon/lib/config");
 
 const userSchema=new mongoose.Schema({
     email:{
@@ -52,6 +51,22 @@ const userSchema=new mongoose.Schema({
         _id: false,
         interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Interview',required:true },
         result: Number
+    }],
+    HRInterview: [{
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'HRInterview',required:true },
+        result: Number
+    }],
+    ManagerialInterview: [{
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'ManagerialInterview',required:true },
+        result: Number
+    }],
+    SeriesInterview: [{
+        _id: false,
+        series_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SerisInterview',required:true },
+        result: Number,
+        completeness:{type:Number,min:0,max:100,default:0}
     }],
 },{timestamps:true});
 

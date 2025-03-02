@@ -22,7 +22,7 @@ async function handleregister(req, res) {
             return res.status(403).json({ message: "User already Exist" })
         }
         const bycrptpassword = await bycrpt.hash(password, 10)
-	const isEmailValidate= await emailvarification(email)
+	    const isEmailValidate= await emailvarification(email)
 
         const user = await User.create({
             name: "",
@@ -36,6 +36,9 @@ async function handleregister(req, res) {
             specialization: "",
             interest: "",
             interview: [],
+            HRInterview:[],
+            ManagerialInterview:[],
+            SeriesInterview:[]
         })
 
         const token = setuser(user);
@@ -47,18 +50,6 @@ async function handleregister(req, res) {
 }
 
 async function uploadassets(req, res) {
-    // const user = req.user;
-    // const image_key = `IMG-${user._id}-${Date.now()}.jpg`;
-    // const path = `images/${image_key}`
-    // const url = await putObjectimage(image_key, "image/jpg")
-    // const updateduser = await User.findByIdAndUpdate(user._id,
-    //     {
-    //         $set: {
-    //             profileimage: path,
-    //         }
-    //     }
-    //     , { new: true })
-    // return res.status(200).json({ message: "Success", data: { profile: url } });
     try {
         const user = req.user;
         const user_id = user._id;
@@ -72,7 +63,7 @@ async function uploadassets(req, res) {
         await User.findByIdAndUpdate(user_id,
             {
                 $set: {
-                    imagprofileimage: path_image,
+                    profileimage: path_image,
                     resume: path_resume
                 }
             }
