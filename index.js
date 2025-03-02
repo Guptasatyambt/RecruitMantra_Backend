@@ -4,6 +4,8 @@ const path = require('path');
 const userroute = require('./routes/userroute')
 const feedbackroute = require('./routes/feedbackroute')
 const interviewroute = require('./routes/interviewrout')
+const hrinterviewroutes=require('./routes/hrInterview')
+const seriesroutes=require('./routes/series')
 const bodyParser = require('body-parser');
 const { ConnectionDB } = require('./connection');
 const { validation } = require('./service/auth')
@@ -46,10 +48,14 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/resume', express.static('resume'))
+
 app.use('/user', userroute);
 app.use('/feedback', feedbackroute)
-app.use('/interview', interviewroute)
 app.use('/carrer', applicantroute);
+
+app.use('/interview', interviewroute)
+app.use('/hrInterview',hrinterviewroutes)
+app.use('/series',seriesroutes)
 // app.use(cookieParser());
 app.get('/', (req, res) => {
   res.send('Welcome to the RecruitMantra Backend!');
