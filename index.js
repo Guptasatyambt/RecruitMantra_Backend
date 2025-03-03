@@ -6,6 +6,7 @@ const feedbackroute = require('./routes/feedbackroute')
 const interviewroute = require('./routes/interviewrout')
 const hrinterviewroutes=require('./routes/hrInterview')
 const seriesroutes=require('./routes/series')
+const companyroute = require('./routes/companyroutes')
 const bodyParser = require('body-parser');
 const { ConnectionDB } = require('./connection');
 const { validation } = require('./service/auth')
@@ -56,6 +57,7 @@ app.use('/carrer', applicantroute);
 app.use('/interview', interviewroute)
 app.use('/hrInterview',hrinterviewroutes)
 app.use('/series',seriesroutes)
+app.use('/dashboard', companyroute)
 // app.use(cookieParser());
 app.get('/', (req, res) => {
   res.send('Welcome to the RecruitMantra Backend!');
