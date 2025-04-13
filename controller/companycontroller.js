@@ -17,7 +17,8 @@ async function addCompany(req, res) {
 
         // Validate required fields
         if (!company_name || !industry || !position || !package_lpa || 
-            !job_description || !visit_date || !application_deadline || !eligibility_criteria) {
+            !job_description || !visit_date || !application_deadline || 
+            !eligibility_criteria) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -30,6 +31,7 @@ async function addCompany(req, res) {
             visit_date,
             application_deadline,
             eligibility_criteria,
+            college_id: req.user.college,
             students_hired: 0,
             status: 'upcoming'
         });
@@ -207,4 +209,4 @@ module.exports = {
     updateHiringStatus,
     getEligibleCompanies,
     deleteCompany
-}; 
+};

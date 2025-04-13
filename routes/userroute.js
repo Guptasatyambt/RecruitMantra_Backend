@@ -1,11 +1,12 @@
 const express = require('express');
-const {test, handleregister, handledetails, handlelogin, getinfo, getcoin, givecoins, handleimage, updateyear, updateresume, generateAndSendOTP, validateotp, updatepassword, uploadassets, sendVarifyEmailOtp, validateEmailotp } = require('../controller/usercontroller')
+const {test, handleregister, handledetails, handlelogin, getinfo, getcoin, givecoins, handleimage, updateyear, updateresume, generateAndSendOTP, validateotp, updatepassword, uploadassets, sendVarifyEmailOtp, validateEmailotp, registerCollegeAdmin, approveCollegeAdmin, getAllCollegeAdmins, registerSuperAdmin } = require('../controller/usercontroller')
 const { validation } = require('../service/auth')
 const upload = require('../middleware/uploads')
 const uploadvid = require('../middleware/uploadvideo')
 const router = express.Router();
 
 router.post('/signin', handleregister);
+router.post('/register-college-admin', registerCollegeAdmin);
 router.post('/updateassets', validation, uploadassets)
 router.post('/uploadinfo', validation, handledetails)
 router.post('/login', handlelogin)
@@ -15,6 +16,13 @@ router.post('/givecoins', validation, givecoins);
 router.post('/updateimage', validation, handleimage);
 router.post('/updateyear', validation, updateyear)
 router.post('/updateresume', validation, updateresume)
+
+// Super admin
+router.post('/register-super-admin', registerSuperAdmin)
+
+// College admin management routes
+
+router.get('/college-admins', validation, getAllCollegeAdmins);
 
 router.post('/emailvarification', validation, sendVarifyEmailOtp)
 router.post('/varifyemail', validation, validateEmailotp)

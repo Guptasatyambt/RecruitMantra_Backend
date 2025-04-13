@@ -10,10 +10,12 @@ let otpStore = {};
 async function test(req,res) {
 return res.status(200).json({message:"Server is running"});
 }
+
+// Regular student registration
 async function handleregister(req, res) {
     try {
-        const { email, password } = req.body
-        if (!email || !password) {
+        const { email, password, college } = req.body
+        if (!email || !password || !college) {
             return res.status(404).json({ message: "All field are compulsory" });
         }
 
@@ -22,15 +24,16 @@ async function handleregister(req, res) {
             return res.status(403).json({ message: "User already Exist" })
         }
         const bycrptpassword = await bycrpt.hash(password, 10)
-	const isEmailValidate= await emailvarification(email)
+        const isEmailValidate= await emailvarification(email)
 
         const user = await User.create({
             name: "",
             email: email,
             password: bycrptpassword,
+            role: 'student',
             resume: "",
             profileimage: "",
-            college: "",
+            college: college,
             branch: "",
             year: "",
             specialization: "",
@@ -39,26 +42,159 @@ async function handleregister(req, res) {
         })
 
         const token = setuser(user);
-        return res.status(200).json({ message: "Success", data: { token, id: user.id, name: "" } });
+        return res.status(200).json({ message: "Success", data: { token, id: user.id, name: "", role: user.role } });
     }
     catch (e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
 
+// College admin registration
+async function registerCollegeAdmin(req, res) {
+    try {
+        const { email, password, name, college } = req.body;
+        
+        if (!email || !password || !name || !college) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(403).json({ message: "User already exists" });
+        }
+
+        const hashedPassword = await bycrpt.hash(password, 10);
+        const isEmailValidate = await emailvarification(email);
+
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            role: 'college_admin',
+            isApproved: false, // College admins need approval from super admin
+            college,
+            profileimage: "",
+            branch: "",
+            year: "",
+            specialization: "",
+            interest: "",
+            resume: "",
+            interview: []
+        });
+
+        // Notify super admins about new college admin registration
+        const superAdmins = await User.find({ role: 'super_admin' });
+        if (superAdmins.length > 0) {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            for (const admin of superAdmins) {
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: admin.email,
+                    subject: 'New College Admin Registration',
+                    html: `
+                        <h2>New College Admin Registration</h2>
+                        <p>A new college admin has registered and is awaiting approval:</p>
+                        <ul>
+                            <li><strong>Name:</strong> ${name}</li>
+                            <li><strong>Email:</strong> ${email}</li>
+                            <li><strong>College:</strong> ${college}</li>
+                        </ul>
+                        <p>Please log in to the admin dashboard to approve or reject this request.</p>
+                    `
+                };
+
+                await transporter.sendMail(mailOptions);
+            }
+        }
+
+        return res.status(201).json({
+            message: "College admin registration successful. Your account is pending approval from super admin.",
+            data: { id: user._id }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+// Super admin registration (should be restricted or done manually)
+async function registerSuperAdmin(req, res) {
+    try {
+        // Check if the request is authorized (e.g., from a secure admin setup process)
+        // This should be highly restricted
+        const { email, password, name, secretKey } = req.body;
+        
+        // Verify secret key (should be stored securely, not in code)
+        if (secretKey !== process.env.SUPER_ADMIN_SECRET_KEY) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+        
+        if (!email || !password || !name) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(403).json({ message: "User already exists" });
+        }
+
+        const hashedPassword = await bycrpt.hash(password, 10);
+
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            role: 'super_admin',
+            isApproved: true,
+            college: null,
+            profileimage: "",
+            branch: "",
+            year: "",
+            specialization: "",
+            interest: "",
+            resume: "",
+            interview: []
+        });
+
+        const token = setuser(user);
+        return res.status(201).json({
+            message: "Super admin created successfully",
+            data: { token, id: user._id, name: user.name, role: user.role }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+// Get all college admins (for super admin)
+async function getAllCollegeAdmins(req, res) {
+    try {
+        // Only super admin can view all college admins
+        if (req.user.role !== 'super_admin') {
+            return res.status(403).json({ message: "Access denied. Super admin privileges required" });
+        }
+        
+        const collegeAdmins = await User.find(
+            { role: 'college_admin' },
+            { name: 1, email: 1, college: 1, isApproved: 1, createdAt: 1 }
+        );
+        
+        return res.status(200).json({
+            message: "Success",
+            data: collegeAdmins
+        });
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
 async function uploadassets(req, res) {
-    // const user = req.user;
-    // const image_key = `IMG-${user._id}-${Date.now()}.jpg`;
-    // const path = `images/${image_key}`
-    // const url = await putObjectimage(image_key, "image/jpg")
-    // const updateduser = await User.findByIdAndUpdate(user._id,
-    //     {
-    //         $set: {
-    //             profileimage: path,
-    //         }
-    //     }
-    //     , { new: true })
-    // return res.status(200).json({ message: "Success", data: { profile: url } });
     try {
         const user = req.user;
         const user_id = user._id;
@@ -116,6 +252,7 @@ async function handledetails(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
+
 async function handlelogin(req, res) {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -128,9 +265,25 @@ async function handlelogin(req, res) {
             return res.status(404).json({ message: "User not exist! please sign In" })
             // throw new Error("User not exist! please sign In")
         }
+        
+        // Check if college admin is approved
+        if (user.role === 'college_admin' && !user.isApproved) {
+            return res.status(403).json({ message: "Your account is pending approval from super admin" });
+        }
+        
         if (user && (await bycrpt.compare(password, user.password))) {
             const token = setuser(user);
-            return res.status(200).json({ message: "Success", data: { token, id: user.id, name: user.name } });
+            return res.status(200).json({ 
+                message: "Success", 
+                data: { 
+                    token, 
+                    id: user.id, 
+                    name: user.name, 
+                    role: user.role,
+                    college: user.college,
+                    isApproved: user.isApproved
+                } 
+            });
         }
         else {
             return res.status(400).json({ message: "Incorrect password" })
@@ -148,9 +301,10 @@ async function getinfo(req, res) {
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
         }
-        const image_url = await getobjecturlimage(user.profileimage)
-        const resume_url = await getobjecturlassets(user.resume)
-        return res.status(200).json({ user, image: image_url, resume: resume_url });
+        // const image_url = await getobjecturlimage(user.profileimage)
+        // const resume_url = await getobjecturlassets(user.resume)
+        // return res.status(200).json({ user, image: image_url, resume: resume_url });
+        return res.status(200).json({ user });
     }
     catch (e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
@@ -465,5 +619,8 @@ module.exports = {
     uploadassets,
     sendVarifyEmailOtp,
     validateEmailotp,
-   test
+    test,
+    registerCollegeAdmin,
+    registerSuperAdmin,
+    getAllCollegeAdmins
 };

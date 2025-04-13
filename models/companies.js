@@ -5,25 +5,34 @@ const companySchema = new mongoose.Schema({
         type: String,
         require: true,
     },
+    college_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'college',
+        required: true
+    },
     industry: {
         type: String,
-        require: true,
+        require: false,
     },
     position: {
         type: String,
-        require: true,
+        require: false,
     },
     package_lpa: {
         type: Number,
-        require: true,
+        require: false,
     },
     students_hired: {
         type: Number,
         default: 0,
     },
+    hired_students: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
+    }],
     job_description: {
         type: String,
-        require: true,
+        require: false,
     },
     visit_date: {
         type: Date,
@@ -56,4 +65,4 @@ const companySchema = new mongoose.Schema({
 
 const COMPANY = mongoose.model('company', companySchema);
 
-module.exports = COMPANY; 
+module.exports = COMPANY;
