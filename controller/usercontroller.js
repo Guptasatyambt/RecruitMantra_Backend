@@ -26,7 +26,6 @@ async function handleregister(req, res) {
         }
         const bycrptpassword = await bycrpt.hash(password, 10)
 	    const isEmailValidate= await emailvarification(email)
-       
 
         const user = await User.create({
             name: "",
@@ -308,11 +307,12 @@ async function getinfo(req, res) {
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
         }
-        if(!user.profileimage &&!user.resume){
-        const image_url = await getobjecturlimage(user.profileimage)
-        const resume_url = await getobjecturlassets(user.resume)
-        return res.status(200).json({ user, image: image_url, resume: resume_url });
+        if (user.profileimage && user.resume) {
+            const image_url = await getobjecturlimage(user.profileimage)
+            const resume_url = await getobjecturlassets(user.resume)
+            return res.status(200).json({ user, image: image_url, resume: resume_url });
         }
+        else
         return res.status(200).json({ user });
     }
     catch (e) {
