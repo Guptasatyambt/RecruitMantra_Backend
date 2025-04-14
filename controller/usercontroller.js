@@ -2,6 +2,7 @@ const { setuser } = require('../service/auth')
 const User = require('../models/usermodel');
 const emailvarification=require('../middleware/email_validate')
 const bycrpt = require('bcryptjs');
+// const sendEmail=require('../middleware/sendemail')
 const fs = require('fs')
 const { putObjectimage, putObjectresume, getobjecturlassets, getobjecturlimage } = require('../middleware/aws')
 const nodemailer = require('nodemailer');
@@ -134,14 +135,19 @@ async function handlelogin(req, res) {
 async function getinfo(req, res) {
 
     try {
+        console.log(req.user);
         const email = req.user.email;
+        
         const user = await User.findOne({ email })
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
         }
+        if(!user.profileimage &&!user.resume){
         const image_url = await getobjecturlimage(user.profileimage)
         const resume_url = await getobjecturlassets(user.resume)
         return res.status(200).json({ user, image: image_url, resume: resume_url });
+        }
+        return res.status(200).json({ user });
     }
     catch (e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
@@ -174,6 +180,7 @@ async function givecoins(req, res) {
         , { new: true })
     return res.status(200).json(updateduser)
 }
+
 async function updatepassword(req, res) {
     const { email, password } = req.body;
     try {
@@ -196,17 +203,15 @@ async function updatepassword(req, res) {
     }
 
 }
-async function generateAndSendOTP(req, res) {
+async function generateAndSendUrl(req, res) {
     const { email } = req.body;
     if (!email) {
         return res.status(400).json({ message: 'Email is required' });
     }
-
-    try {
-        const user = await User.findOne({ email })
-        if (!user) {
-            return res.status(403).json({ message: "User does not exist" })
-        }
+    try{
+        const user = await User.findOne({email});
+        if (!user) return res.status(400).json({ message: "User not found" });
+        const token = setuser(user);
         const otp = Math.floor(100000 + Math.random() * 900000);
         const expiryTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
         otpStore[email] = {
@@ -214,47 +219,71 @@ async function generateAndSendOTP(req, res) {
             expiresAt: expiryTime,
             isUsed: false
         };
+        const link = `${process.env.CLIENT_URL}/reset-password?t=${token}?r=${otp}?h=${email}`;
+       
+        // await sendEmail(email, "Password Reset", `<p>Click to reset: <a href="${link}">${link}</a></p>`);
+        // let transporter = nodemailer.createTransport({
+        //     service: 'gmail',
+        //     auth: {
+        //         user: process.env.EMAIL_USER, 
+        //         pass: process.env.EMAIL_PASS
+        //     }
+        // });
 
-        let transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER, // Use environment variables for security
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        // // Email options
+        // let mailOptions = {
+        //     from: process.env.EMAIL_USER,
+        //     to: email,
+        //     subject: 'Password Reset Request - RecruitMantra',
+        //     text: `
+        // Dear user,
+        
+        // We received a request to reset the password for your RecruitMantra account. If you initiated this request, please visit the following link to set a new password:
+        
+        // ${link}
+        
+        // If you did not request a password reset, you can safely ignore this email — no changes will be made to your account.
+        
+        // If you need any assistance, feel free to reach out to our support team.
+        
+        // Best regards,  
+        // The RecruitMantra Team
+        // `,
+        //     html: `
+        //     <div style="font-family: Arial, sans-serif; color: #333;">
+        //         <p>Dear user,</p>
+        //         <p>We received a request to reset the password for your RecruitMantra account. If you initiated this request, please click the button below to set a new password:</p>
+        //         <p style="text-align: center;">
+        //             <a href="${link}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+        //         </p>
+        //         <p>If you did not request a password reset, you can safely ignore this email — no changes will be made to your account.</p>
+        //         <p>If you need any assistance, feel free to reach out to our support team.</p>
+        //         <p>Best regards,<br/>The RecruitMantra Team</p>
+        //     </div>
+        //     `
+        // };
+        
+        // const info = await transporter.sendMail(mailOptions);
 
-        // Email options
-        let mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Your One-Time Password (OTP) for Password Reset',
-            text: `
-    Dear user,
-    
-    We received a request to reset the password for your account. Please use the following One-Time Password (OTP) to proceed with the reset:
-    
-    Your OTP: ${otp}
-    
-    This OTP is valid for one-time use only and will expire in 15 minutes. If you did not request a password reset, please ignore this email.
-    
-    Best regards,
-    RecruitMantra` };
-        const info = await transporter.sendMail(mailOptions);
-        setTimeout(() => {
-            delete otpStore[email]; // Remove the OTP after 15 minutes
-        }, 15 * 60 * 1000);
-        return res.status(200).json({ message: 'OTP sent to email successfully' });
-    } catch (error) {
+        res.status(200).json({ message: "Reset link sent to email" });
+    }
+     catch (error) {
         return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 }
-async function validateotp(req, res) {
-    const { email, otp } = req.body;
+async function changePassword(req, res) {
+    const email=req.user.email;
+    const { password,otp,urlEmail } = req.body;
     try {
+        if(email!==urlEmail){
+            return res.status(400).json({ message: "The link is invalid.Please double-check and try again." });
+        }
+        const user = await User.findOne({email});
+        if (!user) return res.status(400).json({ message: "Invalid user" });
         const storedOtpData = otpStore[email];
 
         if (!storedOtpData) {
-            return res.status(404).json({ success: false, message: 'OTP not found or expired' });
+            return res.status(404).json({ success: false, message: 'The link is expired .Please double-check and try again.' });
         }
 
         const currentTime = Date.now();
@@ -262,28 +291,38 @@ async function validateotp(req, res) {
         // Check if OTP is expired
         if (currentTime > storedOtpData.expiresAt) {
             delete otpStore[email];  // Delete expired OTP
-            return res.status(400).json({ success: false, message: 'OTP is expired' });
+            return res.status(400).json({ success: false, message: 'The link is expired .Please double-check and try again.' });
         }
 
         // Check if OTP has already been used
         if (storedOtpData.isUsed) {
             delete otpStore[email];
-            return res.status(400).json({ success: false, message: 'OTP is already used' });
+            return res.status(400).json({ success: false, message: 'The link is expired .Please double-check and try again.' });
         }
 
         // Check if entered OTP matches the stored OTP
         if (storedOtpData.otp !== parseInt(otp)) {
-            return res.status(400).json({ success: false, message: 'Invalid OTP' });
+            return res.status(400).json({ success: false, message: 'The link is invalid .Please double-check and try again.' });
         }
 
         // Mark OTP as used
         otpStore[email].isUsed = true;
-        delete otpStore[email];  // Optionally delete OTP after use
-        return res.status(200).json({ success: true, message: 'OTP verified successfully' });
-    } catch (e) {
-        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+        delete otpStore[email]; 
+
+        const bycrptpassword = await bycrpt.hash(password, 10);
+        const updateduser = await User.findByIdAndUpdate(user._id,
+            {
+                $set: {
+                    password: bycrptpassword,
+                }
+            }
+            , { new: true })
+        res.json({ message: "Password updated successfully" });
+    } catch (err) {
+        res.status(400).json({ message: "Invalid or expired token" });
     }
 }
+
 async function sendVarifyEmailOtp(req, res) {
     const user = req.user;
     const email = user.email;
@@ -450,8 +489,8 @@ module.exports = {
     handleimage,
     updateyear,
     updateresume,
-    generateAndSendOTP,
-    validateotp,
+    generateAndSendUrl,
+    changePassword,
     updatepassword,
     uploadassets,
     sendVarifyEmailOtp,
