@@ -28,7 +28,7 @@ async function handlestart(req, res) {
         user_interview.push({ series_id: series._id, completeness: 0 });
 
         // Update user in DB
-        await User.findByIdAndUpdate(user._id, { $set: { SeriesInterview: user_interview } }, { new: true });
+        await User.findByIdAndUpdate(user._id, { $set: { SeriesInterview: user_interview,Ongoing_Seris_id:series._id,completeness_last_series:0 } }, { new: true });
 
         return res.status(200).json({ message: "Success", data: { id: series._id } });
 
@@ -42,6 +42,7 @@ async function insertInterview(req, res) {
     try {
         const { series_id, interview_id, type, Result } = req.body;
         const email = req.user?.email;
+        const user_id=req.user?._id;
         if (!email) {
             return res.status(400).json({ message: "User email is required" });
         }
@@ -85,6 +86,10 @@ async function insertInterview(req, res) {
         await Series.findByIdAndUpdate(series_id, { $set: updateFields }, { new: true });
 
         // Update the user's interview completeness
+        // if(user_id)
+        const updatecompleteness=await User.updateOne(
+            email,{$set:{completeness_last_series:completeness}}
+        );
         const userUpdateResult = await User.updateOne(
             { email, 'SeriesInterview.series_id': series_id }, // Find user by email and matching series_id
             { $set: { 'SeriesInterview.$.completeness': completeness } } // Update completeness
