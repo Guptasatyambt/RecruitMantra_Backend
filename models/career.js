@@ -4,7 +4,6 @@ const applicantSchema=new mongoose.Schema({
     email:{
         type:String,
         require:true,
-        unique:true,
     },
     name:{  
         type:String,
