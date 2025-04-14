@@ -89,6 +89,15 @@ const userSchema=new mongoose.Schema({
         result: Number,
         completeness:{type:Number,min:0,max:100,default:0}
     }],
+    Ongoing_Seris_id:{
+        type:String,
+    },
+    completeness_last_series:{
+        type:Number,
+        min:0,
+        max:100,
+        default:0,
+    }
 },{timestamps:true});
 
 const USER=mongoose.model('user',userSchema);

@@ -194,15 +194,21 @@ async function handlestop(req, res) {
 async function videoupload(req, res) {
     try {
         const { interview_id, question_number, type } = req.body;
-
         // Validate required fields
-        if (!interview_id || !question_number || !type) {
+        if (interview_id==null || question_number==null || type==null) {
             return res.status(400).json({ message: "Missing required fields" });
         }
-
+        // if(question_number!=null){
+        //     console.log("from3");
+        //     return res.status(400).json({ message: "Missing required fields" });
+        // }
+        // if(question_number!=null){
+        //     console.log("from4");
+        //     return res.status(400).json({ message: "Missing required fields" });
+        // }
         const key = `VID-${interview_id}-${Date.now()}-Q->${question_number}.mp4`;
-        const path = `uploads/user-uploads/${interview_id}/${key}`;
-        const key_send = `${interview_id}/${key}`;
+        const path = `uploads/user-uploads/${key}`;
+        const key_send = `${key}`;
 
         // Determine the model dynamically
         const Model = type === "HR" ? HrInterView : type === "Managerial" ? ManagerialInterView : null;
