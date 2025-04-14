@@ -16,11 +16,25 @@ const applicantroute = require('./routes/careersroutes')
 const bodyParser = require('body-parser');
 const {ConnectionDB}=require('./connection');
 const{validation}=require('./service/auth')
+const cors = require('cors');
 
 const app=express();
 const port=process.env.PORT;
 ConnectionDB(process.env.MONGO_URL)
-
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true); // Origin is allowed
+    } else {
+      callback(new Error('Not allowed by CORS')); // Origin is not allowed
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+  credentials: true, // Allow credentials like cookies
+}));
 
 app.use(express.json());
 app.use((error, req, res, next) => {
