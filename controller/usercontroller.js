@@ -347,28 +347,6 @@ async function givecoins(req, res) {
     return res.status(200).json(updateduser)
 }
 
-async function updatepassword(req, res) {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ email })
-        if (!user) {
-            return res.status(404).json({ message: "No user find" })
-        }
-        const bycrptpassword = await bycrpt.hash(password, 10)
-        const updateduser = await User.findByIdAndUpdate(user._id,
-            {
-                $set: {
-                    password: bycrptpassword,
-                }
-            }
-            , { new: true })
-        return res.status(200).json({ message: "Password set successfully" });
-
-    } catch (e) {
-        return res.status(500).json({ message: "Internal Server Error", error: e.message });
-    }
-
-}
 async function generateAndSendUrl(req, res) {
     const { email } = req.body;
     if (!email) {
@@ -387,49 +365,49 @@ async function generateAndSendUrl(req, res) {
         };
         const link = `${process.env.CLIENT_URL}/reset-password?t=${token}?r=${otp}?h=${email}`;
        
-        // await sendEmail(email, "Password Reset", `<p>Click to reset: <a href="${link}">${link}</a></p>`);
-        // let transporter = nodemailer.createTransport({
-        //     service: 'gmail',
-        //     auth: {
-        //         user: process.env.EMAIL_USER, 
-        //         pass: process.env.EMAIL_PASS
-        //     }
-        // });
+        await sendEmail(email, "Password Reset", `<p>Click to reset: <a href="${link}">${link}</a></p>`);
+        let transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER, 
+                pass: process.env.EMAIL_PASS
+            }
+        });
 
-        // // Email options
-        // let mailOptions = {
-        //     from: process.env.EMAIL_USER,
-        //     to: email,
-        //     subject: 'Password Reset Request - RecruitMantra',
-        //     text: `
-        // Dear user,
+        // Email options
+        let mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset Request - RecruitMantra',
+            text: `
+        Dear user,
         
-        // We received a request to reset the password for your RecruitMantra account. If you initiated this request, please visit the following link to set a new password:
+        We received a request to reset the password for your RecruitMantra account. If you initiated this request, please visit the following link to set a new password:
         
-        // ${link}
+        ${link}
         
-        // If you did not request a password reset, you can safely ignore this email — no changes will be made to your account.
+        If you did not request a password reset, you can safely ignore this email — no changes will be made to your account.
         
-        // If you need any assistance, feel free to reach out to our support team.
+        If you need any assistance, feel free to reach out to our support team.
         
-        // Best regards,  
-        // The RecruitMantra Team
-        // `,
-        //     html: `
-        //     <div style="font-family: Arial, sans-serif; color: #333;">
-        //         <p>Dear user,</p>
-        //         <p>We received a request to reset the password for your RecruitMantra account. If you initiated this request, please click the button below to set a new password:</p>
-        //         <p style="text-align: center;">
-        //             <a href="${link}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
-        //         </p>
-        //         <p>If you did not request a password reset, you can safely ignore this email — no changes will be made to your account.</p>
-        //         <p>If you need any assistance, feel free to reach out to our support team.</p>
-        //         <p>Best regards,<br/>The RecruitMantra Team</p>
-        //     </div>
-        //     `
-        // };
+        Best regards,  
+        The RecruitMantra Team
+        `,
+            html: `
+            <div style="font-family: Arial, sans-serif; color: #333;">
+                <p>Dear user,</p>
+                <p>We received a request to reset the password for your RecruitMantra account. If you initiated this request, please click the button below to set a new password:</p>
+                <p style="text-align: center;">
+                    <a href="${link}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+                </p>
+                <p>If you did not request a password reset, you can safely ignore this email — no changes will be made to your account.</p>
+                <p>If you need any assistance, feel free to reach out to our support team.</p>
+                <p>Best regards,<br/>The RecruitMantra Team</p>
+            </div>
+            `
+        };
         
-        // const info = await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
 
         res.status(200).json({ message: "Reset link sent to email" });
     }
@@ -657,7 +635,6 @@ module.exports = {
     updateresume,
     generateAndSendUrl,
     changePassword,
-    updatepassword,
     uploadassets,
     sendVarifyEmailOtp,
     validateEmailotp,
