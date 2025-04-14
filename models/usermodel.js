@@ -15,13 +15,28 @@ const userSchema=new mongoose.Schema({
         type:String,
         require:true,
     },
+    role: {
+        type: String,
+        enum: ['student', 'college_admin', 'super_admin', 'default'],
+        default: 'student',
+        required: true
+    },
+    isApproved: {
+        type: Boolean,
+        default: function() {
+            return this.role === 'student' || this.role === 'super_admin';
+        }
+    },
     profileimage:{
         type:String,
         require:true,
     },
     college:{
-        type:String,
-        require:true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'college',
+        required: function() {
+            return this.role !== 'super_admin';
+        }
     },
     branch:{
         type:String,
@@ -46,6 +61,12 @@ const userSchema=new mongoose.Schema({
     interest:{
         type:String,
         require:true,
+    },
+    cgpa: {
+        type: mongoose.Schema.Types.Decimal128,
+        required: function() {
+            return this.role === 'student';
+        }
     },
     interview: [{
         _id: false,
