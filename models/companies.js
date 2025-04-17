@@ -5,11 +5,6 @@ const companySchema = new mongoose.Schema({
         type: String,
         require: true,
     },
-    college_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'college',
-        required: true
-    },
     industry: {
         type: String,
         require: false,
