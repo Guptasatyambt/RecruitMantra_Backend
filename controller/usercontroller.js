@@ -1,7 +1,11 @@
 const { setuser } = require('../service/auth')
 const User = require('../models/usermodel');
+const Student = require('../models/student')
+const DefaultUser = require('../models/defaultUser')
+const CollegeAdmin = require('../models/cAdmin')
+const College = require('../models/college')
 const emailvarification=require('../middleware/email_validate')
-const bycrpt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 // const sendEmail=require('../middleware/sendemail')
 const fs = require('fs')
 const { putObjectimage, putObjectresume, getobjecturlassets, getobjecturlimage } = require('../middleware/aws')
@@ -13,80 +17,181 @@ return res.status(200).json({message:"Server is running"});
 }
 
 // Regular student registration
-async function handleregister(req, res) {
+async function registerDefaultUser(req, res) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
-        const { email, password, college } = req.body
-        if (!email || !password || !college) {
-            return res.status(404).json({ message: "All field are compulsory" });
+        const { firstName, lastName, email, password, collegeId } = req.body;
+        if (!firstName || !lastName || !email || !password || !collegeId) {
+            return res.status(400).json({ message: "All fields are required" });
         }
 
-        const allReadyExist = await User.findOne({ email })
-        if (allReadyExist) {
-            return res.status(403).json({ message: "User already Exist" })
+        const alreadyExist = await User.findOne({ email }).session(session);
+        if (alreadyExist) {
+            return res.status(409).json({ message: "User already exists" });
         }
-        const bycrptpassword = await bycrpt.hash(password, 10)
-	    const isEmailValidate= await emailvarification(email)
 
-        const user = await User.create({
-            name: "",
-            email: email,
-            password: bycrptpassword,
-            role: 'student',
-            resume: "",
+        // const isEmailValidate = await emailvarification(email);
+        // if (!isEmailValidate) {
+        //     return res.status(400).json({ message: "Invalid email address" });
+        // }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await User.create([{
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            role: 'default',
             profileimage: "",
-            college: college,
-            branch: "",
-            year: "",
-            specialization: "",
-            interest: "",
-            interview: [],
-            HRInterview:[],
-            ManagerialInterview:[],
-            SeriesInterview:[]
-        })
+            technicalInterview: [],
+            hrInterview: [],
+            managerialInterview: [],
+            seriesInterview: []
+        }], { session });
 
-        const token = setuser(user);
-        return res.status(200).json({ message: "Success", data: { token, id: user.id, name: "", role: user.role } });
+        await DefaultUser.create([{
+            defaultUserId: user[0]._id,
+            collegeId,
+            coins: 100,
+        }], { session });
+
+        await session.commitTransaction();
+        
+        const token = setuser(user[0]);
+        return res.status(201).json({ 
+            message: "Registration successful", 
+            data: { 
+                token, 
+                id: user[0]._id, 
+                firstName, 
+                lastName, 
+                role: user[0].role 
+            } 
+        });
+    } catch (e) {
+        await session.abortTransaction();
+        return res.status(500).json({ 
+            message: "Registration failed", 
+            error: e.message 
+        });
+    } finally {
+        session.endSession();
     }
-    catch (e) {
-        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+}
+async function registerStudent(req, res) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+        const { firstName, lastName, email, password, collegeId } = req.body;
+        if (!firstName || !lastName || !email || !password || !collegeId) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const alreadyExist = await User.findOne({ email }).session(session);
+        if (alreadyExist) {
+            return res.status(409).json({ message: "User already exists" });
+        }
+
+        // const isEmailValidate = await emailvarification(email);
+        // if (!isEmailValidate) {
+        //     return res.status(400).json({ message: "Invalid email address" });
+        // }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await User.create([{
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            role: 'student',
+            profileimage: "",
+            technicalInterview: [],
+            hrInterview: [],
+            managerialInterview: [],
+            seriesInterview: []
+        }], { session });
+
+        await Student.create([{
+            studentId: user[0]._id,
+            collegeId,
+            coins: 100,
+            cgpa: 0,
+            cap: 0
+        }], { session });
+
+        await session.commitTransaction();
+        
+        const token = setuser(user[0]);
+        return res.status(201).json({ 
+            message: "Registration successful", 
+            data: { 
+                token, 
+                id: user[0]._id, 
+                firstName, 
+                lastName, 
+                role: user[0].role 
+            } 
+        });
+    } catch (e) {
+        await session.abortTransaction();
+        return res.status(500).json({ 
+            message: "Registration failed", 
+            error: e.message 
+        });
+    } finally {
+        session.endSession();
     }
 }
 
 // College admin registration
 async function registerCollegeAdmin(req, res) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
-        const { email, password, name, college } = req.body;
-        
-        if (!email || !password || !name || !college) {
+        const { firstName, lastName, email, password, collegeId } = req.body;
+        if (!firstName || !lastName || !email || !password || !collegeId) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(403).json({ message: "User already exists" });
+        const alreadyExist = await User.findOne({ email }).session(session);
+        if (alreadyExist) {
+            return res.status(409).json({ message: "User already exists" });
         }
 
-        const hashedPassword = await bycrpt.hash(password, 10);
-        const isEmailValidate = await emailvarification(email);
+        // const isEmailValidate = await emailvarification(email);
+        // if (!isEmailValidate) {
+        //     return res.status(400).json({ message: "Invalid email address" });
+        // }
 
-        const user = await User.create({
-            name,
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await User.create([{
+            firstName,
+            lastName,
             email,
             password: hashedPassword,
             role: 'college_admin',
-            isApproved: false, // College admins need approval from super admin
-            college,
             profileimage: "",
-            branch: "",
-            year: "",
-            specialization: "",
-            interest: "",
-            resume: "",
-            interview: []
-        });
+            technicalInterview: [],
+            hrInterview: [],
+            managerialInterview: [],
+            seriesInterview: []
+        }], { session });
 
-        // Notify super admins about new college admin registration
+        await CollegeAdmin.create([{
+            cAdminId: user[0]._id,
+            collegeId,
+            isApproved: false
+        }], { session });
+
+        const collegeDetails = await College.findOne({ _id: collegeId })
+        const collegeName = collegeDetails.name
         const superAdmins = await User.find({ role: 'super_admin' });
         if (superAdmins.length > 0) {
             const transporter = nodemailer.createTransport({
@@ -96,7 +201,7 @@ async function registerCollegeAdmin(req, res) {
                     pass: process.env.EMAIL_PASS
                 }
             });
-
+        
             for (const admin of superAdmins) {
                 const mailOptions = {
                     from: process.env.EMAIL_USER,
@@ -106,24 +211,39 @@ async function registerCollegeAdmin(req, res) {
                         <h2>New College Admin Registration</h2>
                         <p>A new college admin has registered and is awaiting approval:</p>
                         <ul>
-                            <li><strong>Name:</strong> ${name}</li>
+                            <li><strong>Name:</strong> ${firstName + " " + lastName}</li>
                             <li><strong>Email:</strong> ${email}</li>
-                            <li><strong>College:</strong> ${college}</li>
+                            <li><strong>College:</strong> ${collegeName}</li>
                         </ul>
                         <p>Please log in to the admin dashboard to approve or reject this request.</p>
                     `
                 };
-
+        
                 await transporter.sendMail(mailOptions);
             }
         }
 
-        return res.status(201).json({
-            message: "College admin registration successful. Your account is pending approval from super admin.",
-            data: { id: user._id }
+        await session.commitTransaction();
+        
+        const token = setuser(user[0]);
+        return res.status(201).json({ 
+            message: "College admin registration successful. Your account is pending approval from admin.", 
+            data: { 
+                token, 
+                id: user[0]._id, 
+                firstName, 
+                lastName, 
+                role: user[0].role 
+            } 
         });
-    } catch (error) {
-        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    } catch (e) {
+        await session.abortTransaction();
+        return res.status(500).json({ 
+            message: "Registration failed", 
+            error: e.message 
+        });
+    } finally {
+        session.endSession();
     }
 }
 
@@ -148,7 +268,7 @@ async function registerSuperAdmin(req, res) {
             return res.status(403).json({ message: "User already exists" });
         }
 
-        const hashedPassword = await bycrpt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
             name,
@@ -275,7 +395,7 @@ async function handlelogin(req, res) {
             return res.status(403).json({ message: "Your account is pending approval from super admin" });
         }
         
-        if (user && (await bycrpt.compare(password, user.password))) {
+        if (user && (await bcrypt.compare(password, user.password))) {
             const token = setuser(user);
             return res.status(200).json({ 
                 message: "Success", 
@@ -453,11 +573,11 @@ async function changePassword(req, res) {
         otpStore[email].isUsed = true;
         delete otpStore[email]; 
 
-        const bycrptpassword = await bycrpt.hash(password, 10);
+        const bcryptpassword = await bcrypt.hash(password, 10);
         const updateduser = await User.findByIdAndUpdate(user._id,
             {
                 $set: {
-                    password: bycrptpassword,
+                    password: bcryptpassword,
                 }
             }
             , { new: true })
@@ -624,7 +744,10 @@ async function updateyear(req, res) {
 
 
 module.exports = {
-    handleregister,
+    registerDefaultUser,
+    registerStudent,
+    registerCollegeAdmin,
+    registerSuperAdmin,
     handledetails,
     handlelogin,
     getinfo,
