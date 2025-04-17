@@ -22,4 +22,4 @@ const defaultUserSchema = new mongoose.Schema({
 
 const DEFAULTUSER=mongoose.model('defaultUser',defaultUserSchema);
 
-module.exports=DEFAULTUSER;
+module.exports = DEFAULTUSER;

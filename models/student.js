@@ -14,29 +14,24 @@ const studentSchema = new mongoose.Schema({
     branchId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'branch',
-        required: true,
     },
     year: {
         type: Number,
-        required: true,
     },
     cgpa: {
         type: mongoose.Decimal128,
-        required: true,
+        required: false,
         default: 0,
     },
     resume: {
-        type: string,
-        required: true,
+        type: String,
     },
     coins: {
         type: Number,
-        required: true,
         default: 100,
     },
     cap: {
         type: mongoose.Decimal128,
-        required: true,
         default: 0,
     },
     appliedCompanies: [{

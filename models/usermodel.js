@@ -34,7 +34,7 @@ const userSchema=new mongoose.Schema({
         interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Interview',required:true },
         result: Number
     }],
-    hRInterview: [{
+    hrInterview: [{
         _id: false,
         interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'HRInterview',required:true },
         result: Number
