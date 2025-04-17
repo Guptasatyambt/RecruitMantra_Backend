@@ -29,11 +29,27 @@ const userSchema=new mongoose.Schema({
         type:String,
         require:true,
     },
-    interview: [{
+    technicalInterview: [{
         _id: false,
         interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Interview',required:true },
         result: Number
-    }]
+    }],
+    hRInterview: [{
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'HRInterview',required:true },
+        result: Number
+    }],
+    managerialInterview: [{
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'ManagerialInterview',required:true },
+        result: Number
+    }],
+    seriesInterview: [{
+        _id: false,
+        series_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SerisInterview',required:true },
+        result: Number,
+    }],
+
 },{timestamps:true});
 
 const USER=mongoose.model('user',userSchema);
