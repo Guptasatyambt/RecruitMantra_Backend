@@ -23,6 +23,27 @@ const collegeSchema = new mongoose.Schema({
     },
     established_year: {
         type: Number
+    },
+    activeCompanies: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'company'
+    }],
+    upcomingCompanies: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'company'
+    }],
+    previousVisitedCompanies: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'company'
+    }],
+    capOperand: {
+        type: String,
+        enum: ['+', '*'],
+        default: '*'
+    },
+    capValue: {
+        type: mongoose.Decimal128,
+        default: 1
     }
 }, { timestamps: true });
 
