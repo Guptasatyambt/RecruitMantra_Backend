@@ -1,11 +1,14 @@
 const express = require('express');
-const {test, handleregister, handledetails, handlelogin, getinfo, getcoin, givecoins, handleimage, updateyear, updateresume, generateAndSendUrl, changePassword, uploadassets, sendVarifyEmailOtp, validateEmailotp,registerCollegeAdmin, getAllCollegeAdmins, registerSuperAdmin } = require('../controller/usercontroller')
+const {test, registerDefaultUser, registerStudent, registerCollegeAdmin, registerSuperAdmin, handledetails, handlelogin, getinfo, getcoin, givecoins, handleimage, updateyear, updateresume, generateAndSendUrl, changePassword, uploadassets, sendVerifyEmailOtp, validateEmailotp, getAllCollegeAdmins } = require('../controller/usercontroller')
 const { validation } = require('../service/auth')
 const upload = require('../middleware/uploads')
 const uploadvid = require('../middleware/uploadvideo')
 const router = express.Router();
 
-router.post('/signin', handleregister);
+router.post('/register-default', registerDefaultUser);
+router.post('/register-student', registerStudent);
+router.post('/register-collegeadmin', registerCollegeAdmin);
+router.post('/register-admin', registerSuperAdmin);
 router.post('/register-college-admin', registerCollegeAdmin);
 router.post('/updateassets', validation, uploadassets)
 router.post('/uploadinfo', validation, handledetails)
@@ -24,7 +27,7 @@ router.post('/register-super-admin', registerSuperAdmin)
 
 router.get('/college-admins', validation, getAllCollegeAdmins);
 
-router.post('/emailvarification', validation, sendVarifyEmailOtp)
+router.post('/emailvarification', validation, sendVerifyEmailOtp)
 router.post('/varifyemail', validation, validateEmailotp)
 
 router.post('/forgot-password', generateAndSendUrl) //send email with update url

@@ -4,7 +4,7 @@ const Student = require('../models/student')
 const DefaultUser = require('../models/defaultUser')
 const CollegeAdmin = require('../models/cAdmin')
 const College = require('../models/college')
-const emailvarification=require('../middleware/email_validate')
+const emailvarification = require('../middleware/email_validate')
 const bcrypt = require('bcryptjs');
 // const sendEmail=require('../middleware/sendemail')
 const fs = require('fs')
@@ -12,15 +12,31 @@ const { putObjectimage, putObjectresume, getobjecturlassets, getobjecturlimage }
 const nodemailer = require('nodemailer');
 
 let otpStore = {};
-async function test(req,res) {
-return res.status(200).json({message:"Server is running"});
+async function test(req, res) {
+    return res.status(200).json({ message: "Server is running" });
+}
+
+async function getCollegeDetails(userId, role) {
+    if (role == "college_admin") {
+        const collegeDetails = await CollegeAdmin.findOne({ cAdminId: userId })
+        return collegeDetails;
+    }
+    else if (role == "student") {
+        const collegeDetails = await Student.findOne({ studentId: userId })
+        return collegeDetails;
+    }
+    else if (role == "default") {
+        const collegeDetails = await DefaultUser.findOne({ defaultUserId: userId })
+        return collegeDetails;
+    }
+    return null;
 }
 
 // Regular student registration
 async function registerDefaultUser(req, res) {
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
         const { firstName, lastName, email, password, collegeId } = req.body;
         if (!firstName || !lastName || !email || !password || !collegeId) {
@@ -59,23 +75,23 @@ async function registerDefaultUser(req, res) {
         }], { session });
 
         await session.commitTransaction();
-        
+
         const token = setuser(user[0]);
-        return res.status(201).json({ 
-            message: "Registration successful", 
-            data: { 
-                token, 
-                id: user[0]._id, 
-                firstName, 
-                lastName, 
-                role: user[0].role 
-            } 
+        return res.status(201).json({
+            message: "Registration successful",
+            data: {
+                token,
+                id: user[0]._id,
+                firstName,
+                lastName,
+                role: user[0].role
+            }
         });
     } catch (e) {
         await session.abortTransaction();
-        return res.status(500).json({ 
-            message: "Registration failed", 
-            error: e.message 
+        return res.status(500).json({
+            message: "Registration failed",
+            error: e.message
         });
     } finally {
         session.endSession();
@@ -84,7 +100,7 @@ async function registerDefaultUser(req, res) {
 async function registerStudent(req, res) {
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
         const { firstName, lastName, email, password, collegeId } = req.body;
         if (!firstName || !lastName || !email || !password || !collegeId) {
@@ -125,23 +141,23 @@ async function registerStudent(req, res) {
         }], { session });
 
         await session.commitTransaction();
-        
+
         const token = setuser(user[0]);
-        return res.status(201).json({ 
-            message: "Registration successful", 
-            data: { 
-                token, 
-                id: user[0]._id, 
-                firstName, 
-                lastName, 
-                role: user[0].role 
-            } 
+        return res.status(201).json({
+            message: "Registration successful",
+            data: {
+                token,
+                id: user[0]._id,
+                firstName,
+                lastName,
+                role: user[0].role
+            }
         });
     } catch (e) {
         await session.abortTransaction();
-        return res.status(500).json({ 
-            message: "Registration failed", 
-            error: e.message 
+        return res.status(500).json({
+            message: "Registration failed",
+            error: e.message
         });
     } finally {
         session.endSession();
@@ -152,7 +168,7 @@ async function registerStudent(req, res) {
 async function registerCollegeAdmin(req, res) {
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
         const { firstName, lastName, email, password, collegeId } = req.body;
         if (!firstName || !lastName || !email || !password || !collegeId) {
@@ -201,7 +217,7 @@ async function registerCollegeAdmin(req, res) {
                     pass: process.env.EMAIL_PASS
                 }
             });
-        
+
             for (const admin of superAdmins) {
                 const mailOptions = {
                     from: process.env.EMAIL_USER,
@@ -218,29 +234,29 @@ async function registerCollegeAdmin(req, res) {
                         <p>Please log in to the admin dashboard to approve or reject this request.</p>
                     `
                 };
-        
+
                 await transporter.sendMail(mailOptions);
             }
         }
 
         await session.commitTransaction();
-        
+
         const token = setuser(user[0]);
-        return res.status(201).json({ 
-            message: "College admin registration successful. Your account is pending approval from admin.", 
-            data: { 
-                token, 
-                id: user[0]._id, 
-                firstName, 
-                lastName, 
-                role: user[0].role 
-            } 
+        return res.status(201).json({
+            message: "College admin registration successful. Your account is pending approval from admin.",
+            data: {
+                token,
+                id: user[0]._id,
+                firstName,
+                lastName,
+                role: user[0].role
+            }
         });
     } catch (e) {
         await session.abortTransaction();
-        return res.status(500).json({ 
-            message: "Registration failed", 
-            error: e.message 
+        return res.status(500).json({
+            message: "Registration failed",
+            error: e.message
         });
     } finally {
         session.endSession();
@@ -253,12 +269,12 @@ async function registerSuperAdmin(req, res) {
         // Check if the request is authorized (e.g., from a secure admin setup process)
         // This should be highly restricted
         const { email, password, name, secretKey } = req.body;
-        
+
         // Verify secret key (should be stored securely, not in code)
         if (secretKey !== process.env.SUPER_ADMIN_SECRET_KEY) {
             return res.status(403).json({ message: "Unauthorized" });
         }
-        
+
         if (!email || !password || !name) {
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -303,12 +319,12 @@ async function getAllCollegeAdmins(req, res) {
         if (req.user.role !== 'super_admin') {
             return res.status(403).json({ message: "Access denied. Super admin privileges required" });
         }
-        
+
         const collegeAdmins = await User.find(
             { role: 'college_admin' },
             { name: 1, email: 1, college: 1, isApproved: 1, createdAt: 1 }
         );
-        
+
         return res.status(200).json({
             message: "Success",
             data: collegeAdmins
@@ -389,24 +405,25 @@ async function handlelogin(req, res) {
             return res.status(404).json({ message: "User not exist! please sign In" })
             // throw new Error("User not exist! please sign In")
         }
-        
+
         // Check if college admin is approved
         if (user.role === 'college_admin' && !user.isApproved) {
             return res.status(403).json({ message: "Your account is pending approval from super admin" });
         }
-        
+
         if (user && (await bcrypt.compare(password, user.password))) {
             const token = setuser(user);
-            return res.status(200).json({ 
-                message: "Success", 
-                data: { 
-                    token, 
-                    id: user.id, 
-                    name: user.name, 
+            const collegeDetails = getCollegeDetails(user._id, role)
+            return res.status(200).json({
+                message: "Success",
+                data: {
+                    token,
+                    id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
                     role: user.role,
-                    college: user.college,
-                    isApproved: user.isApproved
-                } 
+                    collegeId: collegeDetails._id
+                }
             });
         }
         else {
@@ -418,11 +435,9 @@ async function handlelogin(req, res) {
     }
 }
 async function getinfo(req, res) {
-
     try {
-        console.log(req.user);
-        const email = req.user.email;
-        
+        const { email } = req.user;
+
         const user = await User.findOne({ email })
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
@@ -433,23 +448,40 @@ async function getinfo(req, res) {
             return res.status(200).json({ user, image: image_url, resume: resume_url });
         }
         else
-        return res.status(200).json({ user });
+            return res.status(200).json({ user });
     }
     catch (e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-async function getcoin(req,res){
+async function getcoin(req, res) {
     try {
-        const email = req.user.email;
-        const user = await User.findOne({ email })
+        const userId = req.user._id;
+
+        // First get the user to determine their role
+        const user = await User.findById(userId);
         if (!user) {
-            return res.status(404).json({ message: "No user found with this email" })
+            return res.status(404).json({ message: "User not found" });
         }
-        return res.status(200).json({coin:user.coins});
-    }
-    catch (e) {
-        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+
+        let coins;
+        if (user.role === 'student') {
+            const student = await Student.findOne({ studentId: userId });
+            coins = student?.coins || 0;
+        } else if (user.role === 'default') {
+            const defaultUser = await DefaultUser.findOne({ defaultUserId: userId });
+            coins = defaultUser?.coins || 0;
+        } else {
+            // For college_admin or super_admin, coins might not be applicable
+            coins = 0;
+        }
+
+        return res.status(200).json({ coins });
+    } catch (e) {
+        return res.status(500).json({
+            message: "Internal Server Error",
+            error: e.message
+        });
     }
 }
 async function givecoins(req, res) {
@@ -472,8 +504,8 @@ async function generateAndSendUrl(req, res) {
     if (!email) {
         return res.status(400).json({ message: 'Email is required' });
     }
-    try{
-        const user = await User.findOne({email});
+    try {
+        const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ message: "User not found" });
         const token = setuser(user);
         const otp = Math.floor(100000 + Math.random() * 900000);
@@ -484,12 +516,12 @@ async function generateAndSendUrl(req, res) {
             isUsed: false
         };
         const link = `${process.env.CLIENT_URL}/reset-password?t=${token}?r=${otp}?h=${email}`;
-       
+
         await sendEmail(email, "Password Reset", `<p>Click to reset: <a href="${link}">${link}</a></p>`);
         let transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.EMAIL_USER, 
+                user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
             }
         });
@@ -526,23 +558,23 @@ async function generateAndSendUrl(req, res) {
             </div>
             `
         };
-        
+
         const info = await transporter.sendMail(mailOptions);
 
         res.status(200).json({ message: "Reset link sent to email" });
     }
-     catch (error) {
+    catch (error) {
         return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 }
 async function changePassword(req, res) {
-    const email=req.user.email;
-    const { password,otp,urlEmail } = req.body;
+    const email = req.user.email;
+    const { password, otp, urlEmail } = req.body;
     try {
-        if(email!==urlEmail){
+        if (email !== urlEmail) {
             return res.status(400).json({ message: "The link is invalid.Please double-check and try again." });
         }
-        const user = await User.findOne({email});
+        const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ message: "Invalid user" });
         const storedOtpData = otpStore[email];
 
@@ -571,7 +603,7 @@ async function changePassword(req, res) {
 
         // Mark OTP as used
         otpStore[email].isUsed = true;
-        delete otpStore[email]; 
+        delete otpStore[email];
 
         const bcryptpassword = await bcrypt.hash(password, 10);
         const updateduser = await User.findByIdAndUpdate(user._id,
@@ -587,9 +619,9 @@ async function changePassword(req, res) {
     }
 }
 
-async function sendVarifyEmailOtp(req, res) {
-    const user = req.user;
-    const email = user.email;
+async function sendVerifyEmailOtp(req, res) {
+    const { user } = req;
+    const { email } = user;
 
     if (!email) {
         return res.status(400).json({ message: 'Email is required' });
@@ -644,8 +676,8 @@ Best regards,
     }
 }
 async function validateEmailotp(req, res) {
-    const user = req.user;
-    const email = user.email;
+    const { user } = req;
+    const { email } = user;
     const { otp } = req.body;
     try {
         const storedOtpData = otpStore[email];
@@ -683,7 +715,7 @@ async function validateEmailotp(req, res) {
 }
 async function handleimage(req, res) {
     try {
-        const user = req.user;
+        const { user } = req;
         const image_key = `IMG-${user._id}-${Date.now()}.jpg`;
         const path = `images/${image_key}`
         const url = await putObjectimage(image_key, "image/jpg")
@@ -703,7 +735,7 @@ async function handleimage(req, res) {
 
 async function updateresume(req, res) {
     try {
-        const user = req.user;
+        const { user } = req;
 
         const resume_key = `file-${user._id}-${Date.now()}.pdf`;
         const path_resume = `resume/${resume_key}`
@@ -724,21 +756,32 @@ async function updateresume(req, res) {
 }
 
 async function updateyear(req, res) {
-    const { year } = req.body
+    const { year } = req.body;
     try {
-
-        const user = req.user;
-        const updateduser = await User.findByIdAndUpdate(user._id,
-            {
-                $set: {
-                    year: year,
-                }
-            }
-            , { new: true })
-        return res.status(200).json({ message: "Success", data: { year: updateduser.year } });
-    }
-    catch (e) {
-        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+        const { user } = req;
+        
+        // Only update Student model if user is a student
+        if (user.role === 'student') {
+            const updatedStudent = await Student.findOneAndUpdate(
+                { studentId: user._id },
+                { $set: { year: year } },
+                { new: true }
+            );
+            
+            return res.status(200).json({ 
+                message: "Success", 
+                data: { year: updatedStudent.year } 
+            });
+        }
+        
+        return res.status(400).json({ 
+            message: "Year can only be updated for students" 
+        });
+    } catch (e) {
+        return res.status(500).json({ 
+            message: "Internal Server Error", 
+            error: e.message 
+        });
     }
 }
 
@@ -759,7 +802,7 @@ module.exports = {
     generateAndSendUrl,
     changePassword,
     uploadassets,
-    sendVarifyEmailOtp,
+    sendVerifyEmailOtp,
     validateEmailotp,
     test,
     registerCollegeAdmin,
