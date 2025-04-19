@@ -17,6 +17,7 @@ const bodyParser = require('body-parser');
 const {ConnectionDB}=require('./connection');
 const{validation}=require('./service/auth')
 const cors = require('cors');
+const branchroute = require('./routes/branchroutes');
 
 const app=express();
 const port=process.env.PORT;
@@ -58,12 +59,13 @@ app.use('/job',jobOpenning);
 app.use('/interview', interviewroute)
 app.use('/hrInterview',hrinterviewroutes)
 app.use('/series',seriesroutes)
-app.use('/dashboard', companyroute)
+app.use('/company', companyroute)
 
 app.use('/student', studentroute)
 app.use('/college', collegeroute)
 app.use('/collegeadmin', collegeadminroute)
 app.use('/admin', adminroute)
+app.use('/branch', branchroute);
 // app.use(cookieParser());
 app.get('/', (req, res) => {
   res.send('Welcome to the RecruitMantra Backend!');
