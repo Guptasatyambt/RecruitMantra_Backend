@@ -2,7 +2,7 @@ const COLLEGE = require('../models/college');
 
 const createCollege = async (req, res) => {
     try {
-        const { name, location, contact_email, contact_phone, website, established_year } = req.body;
+        const { name, location, contact_email, contact_phone, website, established_year, capOperand, capValue } = req.body;
         
         const college = new COLLEGE({
             name,
@@ -10,7 +10,12 @@ const createCollege = async (req, res) => {
             contact_email,
             contact_phone,
             website,
-            established_year
+            established_year,
+            capOperand: capOperand || '*',
+            capValue: capValue || 1,
+            activeCompanies: [],
+            upcomingCompanies: [],
+            previousVisitedCompanies: []
         });
 
         await college.save();

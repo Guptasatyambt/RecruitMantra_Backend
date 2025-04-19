@@ -6,41 +6,71 @@ async function addCompany(req, res) {
     try {
         const {
             company_name,
-            industry,
-            position,
-            package_lpa,
-            job_description,
-            visit_date,
-            application_deadline,
-            eligibility_criteria
+            industry
         } = req.body;
 
         // Validate required fields
-        if (!company_name || !industry || !position || !package_lpa || 
-            !job_description || !visit_date || !application_deadline || 
-            !eligibility_criteria) {
+        if (!company_name || !industry) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
         const company = await Company.create({
             company_name,
-            industry,
-            position,
-            package_lpa,
-            job_description,
-            visit_date,
-            application_deadline,
-            eligibility_criteria,
-            college_id: req.user.college,
-            students_hired: 0,
-            status: 'upcoming'
+            industry
+        });
+        return res.status(201).json({ message: "Company added successfully", data: company });
+    } catch (e) {
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+}
+
+async function addCompanyToCollege(req, res) {
+    try {
+        const {
+            companyId,
+            contact_phone,
+            contact_email,
+            location,
+            package,
+            stipendDetails,
+            role,
+            jobDescription,
+            applicationDeadline,
+            minCgpa,
+            allowedBranches,
+            allowedYear
+        } = req.body;
+
+        // Validate required fields
+        if (!companyId || !contact_phone || !contact_email || !location || !package || !stipendDetails || !role || !jobDescription || !applicationDeadline || !minCgpa || !allowedBranches || !allowedYear) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const company = await Company.create({
+            companyId,
+            collegeId: req.user.college,
+            contact_phone,
+            contact_email,
+            location,
+            package,
+            stipendDetails,
+            role,
+            jobDescription,
+            visitDate: new Date(),
+            applicationDeadline,
+            minCgpa,
+            allowedBranches,
+            allowedYear,
+            placeId: []
         });
 
-        // Notify eligible students via email
-        const eligibleStudents = await User.find({
-            year: eligibility_criteria.allowed_batch_year,
-            branch: { $in: eligibility_criteria.allowed_branches }
-        });
+        // Find eligible students (using Student model)
+        const eligibleStudents = await Student.find({
+            collegeId: req.user.college,
+            year: allowedYear,
+            branchId: { $in: allowedBranches },
+            cgpa: { $gte: minCgpa }
+        }).populate('studentId');
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -53,19 +83,19 @@ async function addCompany(req, res) {
         for (const student of eligibleStudents) {
             const mailOptions = {
                 from: process.env.EMAIL_USER,
-                to: student.email,
-                subject: `New Job Opportunity: ${company_name} is Hiring!`,
+                to: student.studentId.email,
+                subject: `New Job Opportunity: ${company.company_name} is Hiring!`,
                 html: `
                     <h2>New Campus Recruitment Opportunity</h2>
-                    <p>Dear ${student.name},</p>
-                    <p>We're excited to inform you that ${company_name} is visiting our campus for recruitment!</p>
+                    <p>Dear ${student.studentId.firstName} ${student.studentId.lastName},</p>
+                    <p>We're excited to inform you that ${company.company_name} is visiting our campus for recruitment!</p>
                     
                     <h3>Job Details:</h3>
                     <ul>
-                        <li><strong>Position:</strong> ${position}</li>
-                        <li><strong>Package:</strong> ${package_lpa} LPA</li>
-                        <li><strong>Visit Date:</strong> ${new Date(visit_date).toLocaleDateString()}</li>
-                        <li><strong>Application Deadline:</strong> ${new Date(application_deadline).toLocaleDateString()}</li>
+                        <li><strong>Position:</strong> ${role}</li>
+                        <li><strong>Package:</strong> ${package}</li>
+                        <li><strong>Visit Date:</strong> ${new Date(company.visitDate).toLocaleDateString()}</li>
+                        <li><strong>Application Deadline:</strong> ${new Date(applicationDeadline).toLocaleDateString()}</li>
                     </ul>
 
                     <p>Please log in to your account for more details and to apply.</p>
@@ -123,7 +153,7 @@ async function getAllCompanies(req, res) {
     try {
         const { status } = req.query;
         let query = {};
-        
+
         if (status) {
             query.status = status;
         }
@@ -203,6 +233,7 @@ async function deleteCompany(req, res) {
 
 module.exports = {
     addCompany,
+    addCompanyToCollege,
     updateCompany,
     getCompanyDetails,
     getAllCompanies,

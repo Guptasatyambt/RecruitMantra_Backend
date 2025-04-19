@@ -1,50 +1,51 @@
-const jwt=require("jsonwebtoken")
+const jwt = require("jsonwebtoken")
 
-const asyncHandler=require('express-async-handler')
+const asyncHandler = require('express-async-handler')
 function setuser(user) {
-   return jwt.sign({
-    _id:user._id,
-    email:user.email,
-    role: user.role
-   },process.env.secret)
+    return jwt.sign({
+        _id: user._id,
+        email: user.email,
+        role: user.role
+    }, process.env.secret)
 }
 
 function getUser(token) {
-    if(!token) return null;
+    if (!token) return null;
     try {
-    return jwt.verify(token,process.env.secret);
+        return jwt.verify(token, process.env.secret);
     } catch (error) {
         return null;
     }
-    
-  }
+
+}
 
 
 
-  const validation=asyncHandler(async(req,res,next)=>{
+const validation = asyncHandler(async (req, res, next) => {
     let token;
-    let authheader=req.headers.Authorization || req.headers.authorization
-    if(authheader && authheader.startsWith("Bearer")){
+    let authheader = req.headers.Authorization || req.headers.authorization
+    if (authheader && authheader.startsWith("Bearer")) {
         token = authheader.split(" ")[1];
-        if(!token){
+        if (!token) {
             res.status(401);
-            throw new Error("Unauthrised User");
+            throw new Error("Unauthorised User");
         }
-        jwt.verify(token,process.env.secret,(err,decode)=>{
+        jwt.verify(token, process.env.secret, (err, decode) => {
             if (err) {
                 console.log(err)
                 res.status(401)
-                throw new Error("Unauthrised user")
+                throw new Error("Unauthorised user")
             }
-            req.user=decode;
+            req.user = decode;
+            console.log("asdf", decode)
             next();
-    
+
         })
-        
+
     }
     else
-    res.status(400).json("Invalid token");
-    });
+        res.status(400).json("Invalid token");
+});
 
 // Middleware to check if user is approved
 const isApproved = asyncHandler(async (req, res, next) => {
@@ -78,6 +79,6 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     next();
 });
 
-module.exports={
-    setuser,getUser,validation,isApproved,isSuperAdmin,isCollegeAdmin,isAdmin
+module.exports = {
+    setuser, getUser, validation, isApproved, isSuperAdmin, isCollegeAdmin, isAdmin
 }

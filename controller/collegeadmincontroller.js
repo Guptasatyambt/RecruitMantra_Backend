@@ -14,14 +14,14 @@ const markStudentsHired = async (req, res) => {
         
         // Find company and verify it belongs to admin's college
         const company = await COMPANY.findById(company_id);
-        if (!company || company.college_id.toString() !== req.user.college.toString()) {
+        if (!company || company._id.toString() !== req.user.college.toString()) {
             return res.status(404).json({ message: 'Company not found or unauthorized' });
         }
         
         // Update company with hired students
         company.hired_students = [...new Set([...company.hired_students, ...student_ids])];
         company.students_hired = company.hired_students.length;
-        await company.save();
+        // await company.save();
         
         res.status(200).json({ message: 'Students marked as hired successfully' });
     } catch (error) {
