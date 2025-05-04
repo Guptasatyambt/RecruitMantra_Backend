@@ -180,7 +180,7 @@ async function handlestop(req, res) {
 async function videoupload(req, res) {
     try {
         const { interview_id, question_number } = req.body;
-        const key = `VID-${interview_id}-${Date.now()}-Q->${question_number}.mp4`;
+        const key = `VID-${interview_id}-${Date.now()}-Q->${question_number}.webm`;
 
         const interview = await InterView.findById(interview_id);
 
@@ -196,7 +196,7 @@ async function videoupload(req, res) {
             }
             , { new: true })
 
-        const url = await putObject(key_send, "video/mp4")
+        const url = await putObject(key_send, "video/webm")
 	const video_link = await getobjecturl(path)
         res.status(200).json({ message: "success", key: url,video_url:video_link })
 
