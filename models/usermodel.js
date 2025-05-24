@@ -90,14 +90,15 @@ const userSchema=new mongoose.Schema({
         completeness:{type:Number,min:0,max:100,default:0}
     }],
     Ongoing_Seris_id:{
-        type:String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'series',
     },
-    completeness_last_series:{
-        type:Number,
-        min:0,
-        max:100,
-        default:0,
-    }
+    // completeness_last_series:{
+    //     type:Number,
+    //     min:0,
+    //     max:100,
+    //     default:0,
+    // }
 },{timestamps:true});
 
 const USER=mongoose.model('user',userSchema);

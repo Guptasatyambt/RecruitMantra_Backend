@@ -47,7 +47,12 @@ const seriesSchema = new mongoose.Schema({
     max: 10,
     default: 0
   },
-  
+  completeness:{
+    type:Number,
+    min:0,
+    max:100,
+    default:0
+  },
 }, { timestamps: true });
 
 const SERIES=mongoose.model('series',seriesSchema);

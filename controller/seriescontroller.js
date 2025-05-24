@@ -28,7 +28,7 @@ async function handlestart(req, res) {
         user_interview.push({ series_id: series._id, completeness: 0 });
 
         // Update user in DB
-        await User.findByIdAndUpdate(user._id, { $set: { SeriesInterview: user_interview,Ongoing_Seris_id:series._id,completeness_last_series:0 } }, { new: true });
+        await User.findByIdAndUpdate(user._id, { $set: { SeriesInterview: user_interview,Ongoing_Seris_id:series._id } }, { new: true });
 
         return res.status(200).json({ message: "Success", data: { id: series._id } });
 
@@ -62,22 +62,21 @@ async function insertInterview(req, res) {
         let updateFields = {};
 
         if (type === "Technical1") {
-            completeness = 25;
-            updateFields = { Technical1: interview_id, Result_Tech1: Result };
+            updateFields = { Technical1: interview_id, Result_Tech1: Result,completeness:25 };
         } else if (type === "Technical2") {
             completeness = 50;
-            updateFields = { Technical2: interview_id, Result_Tech2: Result };
+            updateFields = { Technical2: interview_id, Result_Tech2: Result,completeness:50 };
         } else if (type === "HR") {
             completeness = 75;
-            updateFields = { HR: interview_id, Result_HR: Result };
+            updateFields = { HR: interview_id, Result_HR: Result,completeness:75 };
         } else if (type === "Managerial") {
             completeness = 100;
             const totalResult =
-                (series.Result_Tech1 || 0) +
+                ((series.Result_Tech1 || 0) +
                 (series.Result_Tech2 || 0) +
                 (series.Result_HR || 0) +
-                Result; // Use the new Managerial result
-            updateFields = { Managerial: interview_id, Result_Managerial: Result, Result: totalResult };
+                Result)/4; // Use the new Managerial result
+            updateFields = { Managerial: interview_id, Result_Managerial: Result, Result: totalResult,completeness:100 };
         } else {
             return res.status(400).json({ message: "Invalid interview type" });
         }
@@ -87,9 +86,9 @@ async function insertInterview(req, res) {
 
         // Update the user's interview completeness
         // if(user_id)
-        const updatecompleteness=await User.updateOne(
-            email,{$set:{completeness_last_series:completeness}}
-        );
+        // const updatecompleteness=await User.updateOne(
+        //     email,{$set:{completeness_last_series:completeness}}
+        // );
         const userUpdateResult = await User.updateOne(
             { email, 'SeriesInterview.series_id': series_id }, // Find user by email and matching series_id
             { $set: { 'SeriesInterview.$.completeness': completeness } } // Update completeness
