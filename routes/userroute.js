@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post('/register-default', registerDefaultUser);
 router.post('/register-student', registerStudent);
-router.post('/register-collegeadmin', registerCollegeAdmin);
+router.post('/register-college-admin', registerCollegeAdmin);
 router.post('/register-admin', registerSuperAdmin);
 router.post('/register-college-admin', registerCollegeAdmin);
 router.post('/updateassets', validation, uploadassets)

@@ -402,19 +402,22 @@ async function handlelogin(req, res) {
     }
     try {
         const user = await User.findOne({ email })
+        
         if (!user) {
             return res.status(404).json({ message: "User not exist! please sign In" })
             // throw new Error("User not exist! please sign In")
         }
 
         // Check if college admin is approved
-        if (user.role === 'college_admin' && !user.isApproved) {
+        if (user.role === 'college_admin') {
+            const cAdminDetails = await CollegeAdmin.findOne({ cAdminId: user._id })
+            if(!cAdminDetails.isApproved)
             return res.status(403).json({ message: "Your account is pending approval from super admin" });
         }
 
         if (user && (await bcrypt.compare(password, user.password))) {
             const token = setuser(user);
-            const collegeDetails = getCollegeDetails(user._id, role)
+            const collegeDetails = getCollegeDetails(user._id, user.role)
             return res.status(200).json({
                 message: "Success",
                 data: {

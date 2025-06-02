@@ -18,6 +18,6 @@ const placementSchema = new mongoose.Schema({
     }
 },{timestamps:true});
 
-const PLACEMENT=mongoose.model('placment',placementSchema);
+const PLACEMENT=mongoose.model('placement',placementSchema);
 
 module.exports=PLACEMENT;

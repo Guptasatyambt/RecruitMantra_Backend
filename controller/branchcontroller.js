@@ -1,5 +1,4 @@
 const BRANCH = require('../models/branch');
-const { validation } = require('../service/auth');
 
 async function createBranch(req, res) {
     try {

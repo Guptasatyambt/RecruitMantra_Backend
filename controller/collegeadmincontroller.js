@@ -2,6 +2,9 @@ const User = require('../models/usermodel');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const COMPANY = require('../models/companies');
+const PLACEMENT = require('../models/placement');
+const COMPANYTOCOLLEGE = require('../models/companyToCollege');
+const Student = require('../models/student');
 
 const markStudentsHired = async (req, res) => {
     try {
@@ -12,18 +15,60 @@ const markStudentsHired = async (req, res) => {
             return res.status(400).json({ message: 'Invalid request data' });
         }
         
-        // Find company and verify it belongs to admin's college
+        // Find company and verify it exists
         const company = await COMPANY.findById(company_id);
-        if (!company || company._id.toString() !== req.user.college.toString()) {
-            return res.status(404).json({ message: 'Company not found or unauthorized' });
+        if (!company) {
+            return res.status(404).json({ message: 'Company not found' });
         }
         
-        // Update company with hired students
-        company.hired_students = [...new Set([...company.hired_students, ...student_ids])];
-        company.students_hired = company.hired_students.length;
-        // await company.save();
+        // Find the companyToCollege record
+        const companyToCollege = await COMPANYTOCOLLEGE.findOne({
+            companyId: company_id,
+            collegeId: req.user.college
+        });
         
-        res.status(200).json({ message: 'Students marked as hired successfully' });
+        if (!companyToCollege) {
+            return res.status(404).json({ message: 'Company not associated with this college or unauthorized' });
+        }
+        
+        // Create placement records for each student
+        const placementPromises = student_ids.map(async (studentId) => {
+            // Check if placement already exists
+            const existingPlacement = await PLACEMENT.findOne({
+                studentId,
+                companyId: company_id,
+                collegeId: req.user.college
+            });
+            
+            if (!existingPlacement) {
+                // Create new placement record
+                const placement = new PLACEMENT({
+                    studentId,
+                    companyId: company_id,
+                    collegeId: req.user.college
+                });
+                
+                const savedPlacement = await placement.save();
+                return savedPlacement._id;
+            }
+            
+            return existingPlacement._id;
+        });
+        
+        // Wait for all placement records to be created
+        const placementIds = await Promise.all(placementPromises);
+        
+        // Update companyToCollege with placement IDs
+        // Use Set to ensure uniqueness
+        const existingPlaceIds = companyToCollege.placeId || [];
+        companyToCollege.placeId = [...new Set([...existingPlaceIds, ...placementIds])];
+        
+        await companyToCollege.save();
+        
+        res.status(200).json({ 
+            message: 'Students marked as hired successfully',
+            placements_count: placementIds.length
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
@@ -34,15 +79,16 @@ const markStudentsHired = async (req, res) => {
  * Add multiple students in bulk (by college admin)
  */
 async function addStudentsBulk(req, res) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
         const studentsData = req.body;
         
-        // Validate input is an array
         if (!Array.isArray(studentsData)) {
             return res.status(400).json({ message: "Input should be an array of student objects" });
         }
 
-        // Validate each student object
         const validationErrors = [];
         const studentsToCreate = [];
         const defaultPassword = "12345";
@@ -50,17 +96,15 @@ async function addStudentsBulk(req, res) {
 
         for (const studentData of studentsData) {
             const { 
-                name, 
+                firstName,
+                lastName, 
                 email, 
                 branch, 
                 cgpa,
-                year, 
-                specialization, 
-                interest 
+                year,
             } = studentData;
 
-            // Validate required fields
-            if (!name || !email || !branch || !year || !cgpa) {
+            if (!firstName || !lastName || !email || !branch || !year || !cgpa) {
                 validationErrors.push({ 
                     email: email || 'missing', 
                     error: "Missing required fields (name, email, branch, cgpa, year)" 
@@ -68,8 +112,7 @@ async function addStudentsBulk(req, res) {
                 continue;
             }
 
-            // Check if student already exists
-            const existingUser = await User.findOne({ email });
+            const existingUser = await User.findOne({ email }).session(session);
             if (existingUser) {
                 validationErrors.push({ 
                     email, 
@@ -78,25 +121,34 @@ async function addStudentsBulk(req, res) {
                 continue;
             }
 
-            studentsToCreate.push({
-                name,
+            const user = await User.create([{
+                firstName,
+                lastName,
                 email,
                 password: hashedPassword,
                 role: 'student',
-                college: req.user.college, // Enforce admin's college
-                branch,
-                cgpa,
-                year,
-                specialization: specialization || "",
-                interest: interest || "",
                 profileimage: "",
-                resume: "",
-                interview: []
-            });
+                technicalInterview: [],
+                hrInterview: [],
+                managerialInterview: [],
+                seriesInterview: []
+            }], { session });
+
+            await Student.create([{
+                studentId: user[0]._id,
+                collegeId: req.user.college,
+                branchId: branch,
+                year,
+                cgpa,
+                coins: 100,
+                cap: 0
+            }], { session });
+
+            studentsToCreate.push(user[0]);
         }
 
-        // If any validation errors, return them
         if (validationErrors.length > 0) {
+            await session.abortTransaction();
             return res.status(400).json({ 
                 message: "Some students had validation errors", 
                 errors: validationErrors,
@@ -104,10 +156,9 @@ async function addStudentsBulk(req, res) {
             });
         }
 
-        // Create all valid students
-        const createdStudents = await User.insertMany(studentsToCreate);
+        await session.commitTransaction();
 
-        // Send email notifications (in background, don't wait for completion)
+        // Send email notifications
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -116,14 +167,14 @@ async function addStudentsBulk(req, res) {
             }
         });
 
-        for (const student of createdStudents) {
+        for (const student of studentsToCreate) {
             const mailOptions = {
                 from: process.env.EMAIL_USER,
                 to: student.email,
                 subject: 'Your RecruitMantra Account',
                 html: `
                     <h2>Welcome to RecruitMantra!</h2>
-                    <p>Dear ${student.name},</p>
+                    <p>Dear ${student.firstName} ${student.lastName},</p>
                     <p>An account has been created for you on the RecruitMantra platform.</p>
                     <p>Your login details:</p>
                     <ul>
@@ -142,54 +193,63 @@ async function addStudentsBulk(req, res) {
 
         return res.status(201).json({ 
             message: "Students added successfully", 
-            data: createdStudents.map(s => ({ id: s._id, name: s.name, email: s.email }))
+            data: studentsToCreate.map(s => ({ id: s._id, name: `${s.firstName} ${s.lastName}`, email: s.email }))
         });
     } catch (error) {
+        await session.abortTransaction();
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    } finally {
+        session.endSession();
     }
 }
 
 async function addSingleStudent(req, res) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
         const studentData = req.body;
         const defaultPassword = "12345";
         const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-        // Validate required fields
-        if (!studentData.name || !studentData.email || !studentData.branch || !studentData.year || !studentData.cgpa) {
+        if (!studentData.firstName || !studentData.lastName || !studentData.email || !studentData.branch || !studentData.year || !studentData.cgpa) {
             return res.status(400).json({ 
-                message: "Missing required fields (name, email, branch, year)" 
+                message: "Missing required fields (name, email, branch, year, cgpa)" 
             });
         }
 
-        // Check if student already exists
-        const existingUser = await User.findOne({ email: studentData.email });
+        const existingUser = await User.findOne({ email: studentData.email }).session(session);
         if (existingUser) {
             return res.status(400).json({ 
                 message: "Student with this email already exists" 
             });
         }
 
-        // Create student
-        const newStudent = new User({
-            name: studentData.name,
+        const user = await User.create([{
+            firstName,
+            lastName,
             email: studentData.email,
             password: hashedPassword,
             role: 'student',
-            college: req.user.college,
-            branch: studentData.branch,
-            cgpa: studentData.cgpa,
-            year: studentData.year,
-            specialization: studentData.specialization || "",
-            interest: studentData.interest || "",
             profileimage: "",
-            resume: "",
-            interview: []
-        });
+            technicalInterview: [],
+            hrInterview: [],
+            managerialInterview: [],
+            seriesInterview: []
+        }], { session });
 
-        const createdStudent = await newStudent.save();
+        await Student.create([{
+            studentId: user[0]._id,
+            collegeId: req.user.college,
+            branchId: studentData.branch,
+            year: studentData.year,
+            cgpa: studentData.cgpa,
+            coins: 100,
+            cap: 0
+        }], { session });
 
-        // Send email notification
+        await session.commitTransaction();
+
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -200,15 +260,15 @@ async function addSingleStudent(req, res) {
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
-            to: createdStudent.email,
+            to: user[0].email,
             subject: 'Your RecruitMantra Account',
             html: `
                 <h2>Welcome to RecruitMantra!</h2>
-                <p>Dear ${createdStudent.name},</p>
+                <p>Dear ${user[0].firstName} ${user[0].lastName},</p>
                 <p>An account has been created for you on the RecruitMantra platform.</p>
                 <p>Your login details:</p>
                 <ul>
-                    <li><strong>Email:</strong> ${createdStudent.email}</li>
+                    <li><strong>Email:</strong> ${user[0].email}</li>
                     <li><strong>Password:</strong> ${defaultPassword}</li>
                 </ul>
                 <p>Please log in and change your password as soon as possible.</p>
@@ -217,48 +277,65 @@ async function addSingleStudent(req, res) {
         };
 
         transporter.sendMail(mailOptions).catch(err => {
-            console.error(`Failed to send email to ${createdStudent.email}:`, err);
+            console.error(`Failed to send email to ${user[0].email}:`, err);
         });
 
         return res.status(201).json({ 
             message: "Student added successfully", 
             data: {
-                id: createdStudent._id,
-                name: createdStudent.name,
-                email: createdStudent.email
+                id: user[0]._id,
+                name: `${user[0].firstName} ${user[0].lastName}`,
+                email: user[0].email
             }
         });
     } catch (error) {
+        await session.abortTransaction();
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    } finally {
+        session.endSession();
     }
 }
 
 async function getRecentPlacements(req, res) {
     try {
-        // Get college_id from the authenticated college admin
         const college_id = req.user.college;
-        // Find companies associated with this college that have hired students
-        const companies = await COMPANY.find({
-            college_id: college_id,
-            hired_students: { $exists: true, $not: { $size: 0 } }
-        }).populate({
-            path: 'hired_students',
-            select: 'name email branch year specialization'
-        }).sort({ updatedAt: -1 });
-        // Format the response data
-        const placements = companies.map(company => ({
-            company_id: company._id,
-            company_name: company.company_name,
-            position: company.position,
-            package_lpa: company.package_lpa,
-            visit_date: company.visit_date,
-            students_hired: company.students_hired,
-            hired_students: company.hired_students
+        
+        const placements = await PLACEMENT.find({ collegeId: college_id })
+            .populate({
+                path: 'studentId',
+                select: 'firstName lastName email'
+            })
+            .populate({
+                path: 'companyId',
+                select: 'company_name'
+            })
+            .populate({
+                path: 'collegeId',
+                select: 'name'
+            })
+            .sort({ createdAt: -1 });
+
+        const formattedPlacements = await Promise.all(placements.map(async (placement) => {
+            const companyToCollege = await COMPANYTOCOLLEGE.findOne({
+                companyId: placement.companyId._id,
+                collegeId: college_id
+            });
+
+            return {
+                placement_id: placement._id,
+                company_id: placement.companyId._id,
+                company_name: placement.companyId.company_name,
+                student_name: `${placement.studentId.firstName} ${placement.studentId.lastName}`,
+                student_email: placement.studentId.email,
+                role: companyToCollege?.role || 'Not specified',
+                package_lpa: companyToCollege?.package_lpa || 0,
+                placement_date: placement.createdAt
+            };
         }));
         
         return res.status(200).json({
             message: "Recent placements retrieved successfully",
-            data: placements
+            data: formattedPlacements
         });
     } catch (error) {
         console.error(error);
