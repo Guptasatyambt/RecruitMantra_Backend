@@ -4,95 +4,6 @@ const nodemailer = require('nodemailer');
 const COMPANY = require('../models/companies');
 
 /**
- * Add a new student (by admin)
- */
-async function addStudent(req, res) {
-    try {
-        const { 
-            name, 
-            email, 
-            branch, 
-            year, 
-            college, 
-            specialization, 
-            interest 
-        } = req.body;
-
-        // Validate required fields
-        if (!name || !email || !branch || !year || !college) {
-            return res.status(400).json({ message: "Required fields missing" });
-        }
-
-        // Check if student already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "Student with this email already exists" });
-        }
-
-        // For college admins, enforce their college
-        if (req.user.role === 'college_admin') {
-            college = req.user.college;
-        }
-
-        // Default password (12345) - will be hashed
-        const defaultPassword = "12345";
-        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
-        // Create new student with role
-        const student = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-            role: 'student',
-            college,
-            branch,
-            year,
-            specialization: specialization || "",
-            interest: interest || "",
-            profileimage: "",
-            resume: "",
-            interview: []
-        });
-
-        // Send email notification to student
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Your RecruitMantra Account',
-            html: `
-                <h2>Welcome to RecruitMantra!</h2>
-                <p>Dear ${name},</p>
-                <p>An account has been created for you on the RecruitMantra platform.</p>
-                <p>Your login details:</p>
-                <ul>
-                    <li><strong>Email:</strong> ${email}</li>
-                    <li><strong>Password:</strong> ${defaultPassword}</li>
-                </ul>
-                <p>Please log in and change your password as soon as possible.</p>
-                <p>Best regards,<br>RecruitMantra Team</p>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-
-        return res.status(201).json({ 
-            message: "Student added successfully", 
-            data: { id: student._id, name: student.name, email: student.email } 
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-}
-
-/**
  * Get all students
  */
 async function getAllStudents(req, res) {
@@ -324,7 +235,6 @@ async function getRecentPlacements(req, res) {
 
 
 module.exports = {
-    addStudent,
     getAllStudents,
     getStudentById,
     updateStudent,

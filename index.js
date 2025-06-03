@@ -13,15 +13,17 @@ const collegeroute = require('./routes/collegeroutes')
 const collegeadminroute = require('./routes/collegeadminroutes')
 const adminroute = require('./routes/adminroutes')
 const applicantroute = require('./routes/careersroutes')
+const branchroute = require('./routes/branchroutes');
 const bodyParser = require('body-parser');
 const {ConnectionDB}=require('./connection');
 const{validation}=require('./service/auth')
 const cors = require('cors');
-const branchroute = require('./routes/branchroutes');
+
 
 const app=express();
 const port=process.env.PORT;
 ConnectionDB(process.env.MONGO_URL)
+const allowedOrigins = ["http://localhost:3000"]
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or Postman)

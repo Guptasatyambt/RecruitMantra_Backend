@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken")
-
+const CADMIN = require('../models/cAdmin');
+const STUDENT = require('../models/student');
+const DEFAULTUSER = require('../models/defaultUser');
 const asyncHandler = require('express-async-handler')
 function setuser(user) {
     return jwt.sign({
@@ -30,14 +32,29 @@ const validation = asyncHandler(async (req, res, next) => {
             res.status(401);
             throw new Error("Unauthorised User");
         }
-        jwt.verify(token, process.env.secret, (err, decode) => {
+        jwt.verify(token, process.env.secret, async(err, decode) => {
             if (err) {
                 console.log(err)
                 res.status(401)
                 throw new Error("Unauthorised user")
             }
             req.user = decode;
-            console.log("asdf", decode)
+            
+            var collegeId
+            if (req.user.role == "college_admin") {
+                const details = await CADMIN.findOne({ cAdminId: req.user._id });
+                collegeId = details.collegeId
+            }
+            else if (req.user.role == "student") {
+                const details = await STUDENT.findOne({ studentId: req.user._id });
+                collegeId = details.collegeId
+            }
+            else if (req.user.role == "default") {
+                const details = await DEFAULTUSER.findOne({ defaultUserId: req.user._id });
+                collegeId = details.collegeId
+            }
+
+            req.user.college = collegeId
             next();
 
         })

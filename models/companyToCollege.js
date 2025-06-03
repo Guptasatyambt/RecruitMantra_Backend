@@ -40,7 +40,7 @@ const companyToCollegeSchema = new mongoose.Schema({
         type: Date
     },
     minCgpa: {
-        type: Decimal128
+        type: mongoose.Decimal128
     },
     allowedBranches: [{
         type: mongoose.Schema.Types.ObjectId,

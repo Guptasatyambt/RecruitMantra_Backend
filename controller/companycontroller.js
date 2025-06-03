@@ -1,6 +1,11 @@
 const Company = require('../models/companies');
 const nodemailer = require('nodemailer');
 const User = require('../models/usermodel');
+const CADMIN = require('../models/cAdmin');
+const STUDENT = require('../models/student');
+const DEFAULTUSER = require('../models/defaultUser');
+const COMPANYTOCOLLEGE = require('../models/companyToCollege')
+const COLLEGE = require('../models/college');
 
 async function addCompany(req, res) {
     try {
@@ -46,13 +51,20 @@ async function addCompanyToCollege(req, res) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        const company = await Company.create({
+        // Check if company exists in the Company model
+        const companyExists = await Company.findById(companyId);
+        if (!companyExists) {
+            return res.status(404).json({ message: "Company not found" });
+        }
+
+        // Create a record in CompanyToCollege model
+        const companyToCollege = await COMPANYTOCOLLEGE.create({
             companyId,
             collegeId: req.user.college,
             contact_phone,
             contact_email,
             location,
-            package,
+            package_lpa: package,
             stipendDetails,
             role,
             jobDescription,
@@ -64,10 +76,17 @@ async function addCompanyToCollege(req, res) {
             placeId: []
         });
 
+        // Update the College model to add this company to upcomingCompanies
+        await COLLEGE.findByIdAndUpdate(
+            req.user.college,
+            { $addToSet: { upcomingCompanies: companyId } },
+            { new: true }
+        );
+
         // Find eligible students (using Student model)
-        const eligibleStudents = await Student.find({
+        const eligibleStudents = await STUDENT.find({
             collegeId: req.user.college,
-            year: allowedYear,
+            year: { $in: allowedYear },
             branchId: { $in: allowedBranches },
             cgpa: { $gte: minCgpa }
         }).populate('studentId');
@@ -84,17 +103,17 @@ async function addCompanyToCollege(req, res) {
             const mailOptions = {
                 from: process.env.EMAIL_USER,
                 to: student.studentId.email,
-                subject: `New Job Opportunity: ${company.company_name} is Hiring!`,
+                subject: `New Job Opportunity: ${companyExists.company_name} is Hiring!`,
                 html: `
                     <h2>New Campus Recruitment Opportunity</h2>
                     <p>Dear ${student.studentId.firstName} ${student.studentId.lastName},</p>
-                    <p>We're excited to inform you that ${company.company_name} is visiting our campus for recruitment!</p>
+                    <p>We're excited to inform you that ${companyExists.company_name} is visiting our campus for recruitment!</p>
                     
                     <h3>Job Details:</h3>
                     <ul>
                         <li><strong>Position:</strong> ${role}</li>
                         <li><strong>Package:</strong> ${package}</li>
-                        <li><strong>Visit Date:</strong> ${new Date(company.visitDate).toLocaleDateString()}</li>
+                        <li><strong>Visit Date:</strong> ${new Date(companyToCollege.visitDate).toLocaleDateString()}</li>
                         <li><strong>Application Deadline:</strong> ${new Date(applicationDeadline).toLocaleDateString()}</li>
                     </ul>
 
@@ -107,7 +126,7 @@ async function addCompanyToCollege(req, res) {
             await transporter.sendMail(mailOptions);
         }
 
-        return res.status(201).json({ message: "Company added successfully", data: company });
+        return res.status(201).json({ message: "Company added to college successfully", data: companyToCollege });
     } catch (e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
@@ -133,7 +152,6 @@ async function updateCompany(req, res) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
-
 async function getCompanyDetails(req, res) {
     try {
         const { company_id } = req.params;
@@ -161,6 +179,15 @@ async function getAllCompanies(req, res) {
         const companies = await Company.find(query).sort({ visit_date: 1 });
         return res.status(200).json({ message: "Success", data: companies });
     } catch (e) {
+        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+    }
+}
+
+async function getCompaniesComingToCollege(req, res) {
+    try {
+        const allCompaniesComingToCollege = await COMPANYTOCOLLEGE.find({collegeId : req.user.college})
+    }
+    catch(e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });
     }
 }
@@ -239,5 +266,6 @@ module.exports = {
     getAllCompanies,
     updateHiringStatus,
     getEligibleCompanies,
-    deleteCompany
+    deleteCompany,
+    getCompaniesComingToCollege
 };
