@@ -428,10 +428,6 @@ const getAllCollegeAdmins = async (req, res) => {
     }
 };
 
-
-        const path_image = `images/${image_key}`
-        const path_resume = `resume/${resume_key}`
-
 async function uploadassets(req, res) {
     try {
         const user = req.user;

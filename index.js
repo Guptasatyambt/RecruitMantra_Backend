@@ -20,9 +20,9 @@ const {ConnectionDB}=require('./connection');
 const{validation}=require('./service/auth')
 const cors = require('cors');
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 const app=express();
 const port=process.env.PORT;
 ConnectionDB(process.env.MONGO_URL)
