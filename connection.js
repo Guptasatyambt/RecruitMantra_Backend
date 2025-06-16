@@ -2,7 +2,7 @@
 // CifR88CZjEtHNjbj
 
 
-const MongoClient = require('mongodb').MongoClient;
+// const MongoClient = require('mongodb').MongoClient;
 const mongoose=require("mongoose");
 
 const ConnectionDB=async(Url)=>{

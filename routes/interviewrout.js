@@ -1,12 +1,30 @@
 const express = require('express');
-const{handlestart,handlestop, getinfo,givecoin,getinfoone}=require('../controller/interview')
+const{handlestart,handlestop, getinfo,videoupload,getVideoUrl,ackServer,insertConfidence,insertAccuracy}=require('../controller/interview')
 const router=express.Router();
+const{validation}=require('../service/auth')
 
-router.post('/start',handlestart);  //send query of level
-router.post('/stop/:id',handlestop)   //send result,confidence,accuracy,eye,neck in body and id of interview in params
-router.get('/getdetail',getinfo)  //nothing to send
-router.post('/givecoins',givecoin); //give query of level and result
-router.get('/getinfo/:interviewid',getinfoone); //give params of id
+//for start interview
+router.post('/start',validation,handlestart) //send level in body  {responce ex-"id": "66db52efa80c2e8e838b7f76"}
 
+//called from video model when answer of all questions are updated
+router.post('/stop',validation,handlestop)   //send interview_id,result,confidence,accuracy,eye,neck,complete in body and token
+
+//get detail of one perticuler interview
+router.get('/getdetail',validation,getinfo)  // send  interview_id
+
+//will return presigned url for uploading the video
+router.post('/uploadvideo',validation,videoupload); // send "interview_id"  body
+
+//for getting the url of the video
+router.get('/getUrl',validation,getVideoUrl)   // sent interview_id in body
+
+//for acknowledging the server that video is uploaded successfully
+router.post('/ackServer',validation,ackServer);
+
+//for inserting confidence for one perticuler question
+router.post('/insertconfidence',insertConfidence)
+
+//for inserting accuracy for one perticuler question
+router.post('/insertaccuracy',insertAccuracy)
 
 module.exports=router

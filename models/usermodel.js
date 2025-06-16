@@ -1,4 +1,5 @@
 const mongoose=require("mongoose");
+const Interview=require('./interview');
 
 const userSchema=new mongoose.Schema({
     email:{
@@ -6,7 +7,11 @@ const userSchema=new mongoose.Schema({
         require:true,
         unique:true,
     },
-    name:{  
+    firstName:{  
+        type:String,
+        require:true,
+    },
+    lastName:{  
         type:String,
         require:true,
     },
@@ -14,38 +19,37 @@ const userSchema=new mongoose.Schema({
         type:String,
         require:true,
     },
+    role: {
+        type: String,
+        enum: ['student', 'college_admin', 'super_admin', 'default'],
+        default: 'student',
+        required: true
+    },
     profileimage:{
         type:String,
         require:true,
     },
-    college:{
-        type:String,
-        require:true,
-    },
-    branch:{
-        type:String,
-        require:true,
-    },
-    specialization:{
-        type:String,
-        require:true,
-    },
-    year:{
-        type:String,
-        require:true
-    },
-    resume:{
-        type:String,
-        require :true,
-    },
-    coins:{
-        type:Number,
-        default:150,
-    },
-    interest:{
-        type:String,
-        require:true,
-    }
+    technicalInterview: [{
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Interview',required:true },
+        result: Number
+    }],
+    hrInterview: [{
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'HRInterview',required:true },
+        result: Number
+    }],
+    managerialInterview: [{
+        _id: false,
+        interview_id: { type: mongoose.Schema.Types.ObjectId, ref: 'ManagerialInterview',required:true },
+        result: Number
+    }],
+    seriesInterview: [{
+        _id: false,
+        series_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SerisInterview',required:true },
+        result: Number,
+    }],
+
 },{timestamps:true});
 
 const USER=mongoose.model('user',userSchema);
