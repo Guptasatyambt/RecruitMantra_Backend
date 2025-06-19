@@ -26,6 +26,16 @@ const studentSchema = new mongoose.Schema({
         required: false,
         default: 0,
     },
+    highSchool: {
+        type: mongoose.Decimal128,
+        required: false,
+        default: 0,
+    },
+    intermediate: {
+        type: mongoose.Decimal128,
+        required: false,
+        default: 0,
+    },
     resume: {
         type: String,
     },

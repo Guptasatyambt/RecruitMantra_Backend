@@ -49,6 +49,10 @@ const userSchema=new mongoose.Schema({
         series_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SerisInterview',required:true },
         result: Number,
     }],
+    verified:{
+        type:Boolean,
+        default:false
+    },
 
 },{timestamps:true});
 

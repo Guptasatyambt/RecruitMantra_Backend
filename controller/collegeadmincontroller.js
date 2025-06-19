@@ -168,7 +168,7 @@ async function addStudentsBulk(req, res) {
             const branchId = branches.find(b => b.branchName.toLowerCase() === branch.toLowerCase());
 
             if(!branchId){
-                newBranch=await Branch.create({
+                const newBranch=await Branch.create({
                     branchName:branch,
                 })
                 branchId=newBranch._id;
@@ -192,7 +192,8 @@ async function addStudentsBulk(req, res) {
                 technicalInterview: [],
                 hrInterview: [],
                 managerialInterview: [],
-                seriesInterview: []
+                seriesInterview: [],
+                verified:true,
             }], { session });
 
             await Student.create([{
@@ -298,7 +299,8 @@ async function addSingleStudent(req, res) {
             technicalInterview: [],
             hrInterview: [],
             managerialInterview: [],
-            seriesInterview: []
+            seriesInterview: [],
+            verified:true,
         }], { session });
 
         await Student.create([{

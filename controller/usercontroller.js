@@ -64,7 +64,8 @@ async function registerDefaultUser(req, res) {
             technicalInterview: [],
             hrInterview: [],
             managerialInterview: [],
-            seriesInterview: []
+            seriesInterview: [],
+            verified:false,
         }], { session });
 
         await DefaultUser.create([{
@@ -92,27 +93,27 @@ async function registerDefaultUser(req, res) {
         });
 
         // Email options
-        let mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Your One-Time Password (OTP) for Email Varification',
-            text: `
-    Dear user,
+//         let mailOptions = {
+//             from: process.env.EMAIL_USER,
+//             to: email,
+//             subject: 'Your One-Time Password (OTP) for Email Varification',
+//             text: `
+//     Dear user,
 
-Thank you for registering with RecruitMantra. To complete your registration and verify your email address, please use the following One-Time Password (OTP):
+// Thank you for registering with RecruitMantra. To complete your registration and verify your email address, please use the following One-Time Password (OTP):
 
-Your OTP: ${otp}
+// Your OTP: ${otp}
 
-This OTP is valid for one-time use only and will expire in 15 minutes. If you did not initiate this request, please ignore this email.
+// This OTP is valid for one-time use only and will expire in 15 minutes. If you did not initiate this request, please ignore this email.
 
-Verifying your email helps us ensure the security of your account.
+// Verifying your email helps us ensure the security of your account.
 
-Best regards,  
-- RecruitMantra` };
-        const info = await transporter.sendMail(mailOptions);
-        setTimeout(() => {
-            delete otpStore[email]; // Remove the OTP after 15 minutes
-        }, 15 * 60 * 1000);
+// Best regards,  
+// - RecruitMantra` };
+//         const info = await transporter.sendMail(mailOptions);
+//         setTimeout(() => {
+//             delete otpStore[email]; // Remove the OTP after 15 minutes
+//         }, 15 * 60 * 1000);
         
         await session.commitTransaction();
 
@@ -238,7 +239,8 @@ async function registerCollegeAdmin(req, res) {
             technicalInterview: [],
             hrInterview: [],
             managerialInterview: [],
-            seriesInterview: []
+            seriesInterview: [],
+            verified:false
         }], { session });
 
         const cuser=await CollegeAdmin.create([{
@@ -287,23 +289,23 @@ async function registerCollegeAdmin(req, res) {
                 await transporter.sendMail(mailOptions);
             }
         }
-        let mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Your One-Time Password (OTP) for Email Varification',
-            text: `
-    Dear user,
+//         let mailOptions = {
+//             from: process.env.EMAIL_USER,
+//             to: email,
+//             subject: 'Your One-Time Password (OTP) for Email Varification',
+//             text: `
+//     Dear user,
 
-Thank you for registering with RecruitMantra. To complete your registration and verify your email address, please use the following One-Time Password (OTP):
+// Thank you for registering with RecruitMantra. To complete your registration and verify your email address, please use the following One-Time Password (OTP):
 
-Your OTP: ${otp}
+// Your OTP: ${otp}
 
-This OTP is valid for one-time use only and will expire in 15 minutes. If you did not initiate this request, please ignore this email.
+// This OTP is valid for one-time use only and will expire in 15 minutes. If you did not initiate this request, please ignore this email.
 
-Verifying your email helps us ensure the security of your account.
+// Verifying your email helps us ensure the security of your account.
 
-Best regards,  
-- RecruitMantra` };
+// Best regards,  
+// - RecruitMantra` };
 //         const info = await transporter.sendMail(mailOptions);
 //         setTimeout(() => {
 //             delete otpStore[email]; // Remove the OTP after 15 minutes
@@ -367,7 +369,8 @@ async function registerSuperAdmin(req, res) {
             specialization: "",
             interest: "",
             resume: "",
-            interview: []
+            interview: [],
+            verified:true
         });
 
         const token = setuser(user);
@@ -546,7 +549,7 @@ async function getinfo(req, res) {
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
         }
-        let defaultOrStudent="",image_url="",resume_url="";
+        let defaultOrStudent="",image_url="",resume_url="",collegeDetail={};
 
         if(req.user.role=='student'){
             defaultOrStudent = await Student.findOne({ studentId: req.user._id });
@@ -556,22 +559,31 @@ async function getinfo(req, res) {
         }
         else if(req.user.role=='college_admin'){
             defaultOrStudent = await CollegeAdmin.findOne({ cAdminId: req.user._id });
-             return res.status(200).json({ user,defaultOrStudent,image: image_url });
+            const college = await COLLEGE.findById(defaultOrStudent.collegeId);
+            if ( user.profileimage) {  
+                image_url = await getobjecturlimage(user.profileimage)
+            }
+             return res.status(200).json({ user,defaultOrStudent,college:college.name,
+                collegeDetail:college,image: image_url });
         }
         else{
             defaultOrStudent = await Admin.findOne({ adminId: req.user._id });
             return res.status(200).json({ user,defaultOrStudent,image: image_url });
         }
+
         const branch=await BRANCH.findById(defaultOrStudent.branchId)
         const college = await COLLEGE.findById(defaultOrStudent.collegeId);
-        if ( user.profileimage && defaultOrStudent.resume) {
-            resume_url = await getobjecturlassets(defaultOrStudent.resume)
+        if ( user.profileimage) {  
             image_url = await getobjecturlimage(user.profileimage)
+        }
+        if(defaultOrStudent.resume){
+            resume_url = await getobjecturlassets(defaultOrStudent.resume)
         }
             return res.status(200).json({ 
                 user,
                 defaultOrStudent,
                 college:college.name,
+                collegeDetail:college,
                 branch:branch.branchName,
                 image: image_url,
                 resume: resume_url });
@@ -763,6 +775,7 @@ async function sendVerifyEmailOtp(req, res) {
             expiresAt: expiryTime,
             isUsed: false
         };
+       
 
         let transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -832,9 +845,8 @@ async function validateEmailotp(req, res) {
         // Mark OTP as used
         otpStore[email].isUsed = true;
         delete otpStore[email];  // Optionally delete OTP after use
-        if(user.role==='default'){
-            await DefaultUser.findOneAndUpdate(
-                {defaultUserId:user._id},
+            await User.findByIdAndUpdate(
+                user._id,
                 {
                 $set: {
                     verified: true
@@ -842,18 +854,8 @@ async function validateEmailotp(req, res) {
             },
             { new: true }
             )
-        }
-        else if(user.role==='college_admin'){
-            await CollegeAdmin.findOneAndUpdate(
-                {cAdminId:user._id},
-                {
-                $set: {
-                    verified: true
-                }
-            },
-            { new: true }
-            )
-        }
+        
+       
         return res.status(200).json({ success: true, message: 'OTP verified successfully' });
     } catch (e) {
         return res.status(500).json({ message: "Internal Server Error", error: e.message });

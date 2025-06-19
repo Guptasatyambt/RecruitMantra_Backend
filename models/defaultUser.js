@@ -30,10 +30,9 @@ const defaultUserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    verified:{
-        type:Boolean,
-        default:false
-    }
+    interest:{
+        type:String
+    },
 },{timestamps:true});
 
 const DEFAULTUSER=mongoose.model('defaultUser',defaultUserSchema);
