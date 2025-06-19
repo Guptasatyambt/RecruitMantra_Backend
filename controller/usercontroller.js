@@ -76,21 +76,21 @@ async function registerDefaultUser(req, res) {
             
         }], { session });
         
-        const otp = Math.floor(100000 + Math.random() * 900000);
+        // const otp = Math.floor(100000 + Math.random() * 900000);
         
-        const expiryTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
-        otpStore[email] = {
-            otp,
-            expiresAt: expiryTime,
-            isUsed: false
-        };
-        let transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER, // Use environment variables for security
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        // const expiryTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
+        // otpStore[email] = {
+        //     otp,
+        //     expiresAt: expiryTime,
+        //     isUsed: false
+        // };
+        // let transporter = nodemailer.createTransport({
+        //     service: 'gmail',
+        //     auth: {
+        //         user: process.env.EMAIL_USER, // Use environment variables for security
+        //         pass: process.env.EMAIL_PASS
+        //     }
+        // });
 
         // Email options
 //         let mailOptions = {
@@ -254,13 +254,13 @@ async function registerCollegeAdmin(req, res) {
         const collegeName = collegeDetails.name
         const superAdmins = await User.find({ role: 'super_admin' });
         //create otp
-        const otp = Math.floor(100000 + Math.random() * 900000);
-        const expiryTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
-        otpStore[email] = {
-            otp,
-            expiresAt: expiryTime,
-            isUsed: false
-        };
+        // const otp = Math.floor(100000 + Math.random() * 900000);
+        // const expiryTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
+        // otpStore[email] = {
+        //     otp,
+        //     expiresAt: expiryTime,
+        //     isUsed: false
+        // };
         const transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
