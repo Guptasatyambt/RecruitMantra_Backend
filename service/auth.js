@@ -29,13 +29,11 @@ const validation = asyncHandler(async (req, res, next) => {
     if (authheader && authheader.startsWith("Bearer")) {
         token = authheader.split(" ")[1];
         if (!token) {
-            res.status(401);
-            throw new Error("Unauthorised User");
+            return res.status(401).json({ message: "Unauthorised User || No token available" });
         }
         jwt.verify(token, process.env.secret, async(err, decode) => {
             if (err) {
-                res.status(401)
-                throw new Error("Unauthorised user")
+                return res.status(401).json({ message: "Unauthorised User", error:err});
             }
             req.user = decode;
             
