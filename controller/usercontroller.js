@@ -549,7 +549,7 @@ async function getinfo(req, res) {
         if (!user) {
             return res.status(404).json({ message: "No user found with this email" })
         }
-        let defaultOrStudent="",image_url="",resume_url="",collegeDetail={};
+        let defaultOrStudent="",image_url="",resume_url="";
 
         if(req.user.role=='student'){
             defaultOrStudent = await Student.findOne({ studentId: req.user._id });
@@ -568,10 +568,13 @@ async function getinfo(req, res) {
         }
         else{
             defaultOrStudent = await Admin.findOne({ adminId: req.user._id });
+             if ( user.profileimage) {  
+            image_url = await getobjecturlimage(user.profileimage)
+            }
             return res.status(200).json({ user,defaultOrStudent,image: image_url });
         }
 
-        const branch=await BRANCH.findById(defaultOrStudent.branchId)
+        const branch=await BRANCH.findById(defaultOrStudent?.branchId)
         const college = await COLLEGE.findById(defaultOrStudent.collegeId);
         if ( user.profileimage) {  
             image_url = await getobjecturlimage(user.profileimage)
@@ -584,7 +587,7 @@ async function getinfo(req, res) {
                 defaultOrStudent,
                 college:college.name,
                 collegeDetail:college,
-                branch:branch.branchName,
+                branch:branch?.branchName,
                 image: image_url,
                 resume: resume_url });
     }
