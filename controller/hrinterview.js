@@ -246,7 +246,7 @@ async function videoupload(req, res) {
         const key_send = `${key}`;
 const normalizedType = type?.toLowerCase();
         // Determine the model dynamically
-        const Model = normalizedType === "hr" ? HrInterView : tynormalizedTypepe === "managerial" ? ManagerialInterView : null;
+        const Model = normalizedType === "hr" ? HrInterView : normalizedType === "managerial" ? ManagerialInterView : null;
         if (!Model) {
             return res.status(400).json({ message: "Invalid interview type" });
         }
