@@ -1,10 +1,10 @@
 const InterView = require('../models/interview');
 const User = require('../models/usermodel');
-const Defaultuser=require('../models/defaultUser');
-const Student=require('../models/student');
+const Defaultuser = require('../models/defaultUser');
+const Student = require('../models/student');
 const { getobjecturl, putObject } = require('../middleware/aws');
 const { messaging } = require('firebase-admin');
-
+const axios = require("axios");
 
 async function handlestart(req, res) {
     try {
@@ -112,9 +112,9 @@ async function insertAccuracy(req, res) {
 async function handlestop(req, res) {
     try {
 
-        const {interview_id} = req.body;
+        const { interview_id } = req.body;
         // Validate required fields
-        if ( !interview_id) {
+        if (!interview_id) {
             return res.status(400).json("All fields are compulsory");
         }
         const interview = await InterView.findById(interview_id);
@@ -149,28 +149,28 @@ async function handlestop(req, res) {
         const level = interview.level;
 
         let user;
-        if(req.user.role=='student'){
+        if (req.user.role == 'student') {
             user = await Student.findOne({ studentId: req.user._id });
         }
-        else if(req.user.role=='default'){
+        else if (req.user.role == 'default') {
             user = await Defaultuser.findOne({ defaultUserId: req.user._id });
         }
         let coin = user.coins;
         // Calculate reward if interview is complete 
-           let reward = 0;
-            if (level === 'beginner') {
-                reward = 10 + parseInt(result);
-            } else if (level === 'intermediate') {
-                reward = 15 + parseInt(result) * 2;
-            } else if (level === 'advance') {
-                reward = 25 + parseInt(result) * 5;
-            }
-            coin += reward;
+        let reward = 0;
+        if (level === 'beginner') {
+            reward = 10 + parseInt(result);
+        } else if (level === 'intermediate') {
+            reward = 15 + parseInt(result) * 2;
+        } else if (level === 'advance') {
+            reward = 25 + parseInt(result) * 5;
+        }
+        coin += reward;
 
         // Update user's interview list
-        const userdata=await User.findById(req.user._id);
+        const userdata = await User.findById(req.user._id);
         let user_interview = userdata.technicalInterview;
-        
+
         user_interview.push({ interview_id, result });
 
         // Update the user in the database
@@ -183,26 +183,26 @@ async function handlestop(req, res) {
             },
             { new: true }
         );
-        if(req.user.role=='student'){
+        if (req.user.role == 'student') {
             await Student.findOneAndUpdate(
-            {_id:user._id},
-            {
-                $set: {
-                    coins: coin
-                }
-            },
-            { new: true }
+                { _id: user._id },
+                {
+                    $set: {
+                        coins: coin
+                    }
+                },
+                { new: true }
             );
         }
-        else if(req.user.role=='default'){
+        else if (req.user.role == 'default') {
             await Defaultuser.findOneAndUpdate(
-            {_id:user._id},
-            {
-                $set: {
-                    coins: coin
-                }
-            },
-            { new: true }
+                { _id: user._id },
+                {
+                    $set: {
+                        coins: coin
+                    }
+                },
+                { new: true }
             );
         }
         return res.status(200).json({ message: "Success", data: { updatedinterview } });
@@ -231,8 +231,8 @@ async function videoupload(req, res) {
             , { new: true })
 
         const url = await putObject(key_send, "video/mp4")
-	const video_link = await getobjecturl(path)
-        res.status(200).json({ message: "success", key: url,video_url:video_link })
+        const video_link = await getobjecturl(path)
+        res.status(200).json({ message: "success", key: url, video_url: video_link })
 
     }
     catch (e) {
@@ -254,12 +254,55 @@ async function getVideoUrl(req, res) {
 
 async function ackServer(req, res) {
     try {
+        const { interview_id, question_number, question, videoUrl } = req.body;
+        console.log(question);
+        if (!interview_id || !question_number || !question || !videoUrl) {
+            return res.status(400).json({ message: "All fields are compulsory" });
+        }
 
-        res.status(200).json({ message: "success" })
+        const interview = await InterView.findById(interview_id);
+        if (!interview) {
+            return res.status(404).json({ message: "Interview not found" });
+        }
 
-    }
-    catch (e) {
-        return res.status(500).json({ message: "Internal Server Error", error: e.message });
+
+        const [response_audio, response_video, response_accuracy] = await Promise.all([
+            axios.post("https://ml.recruitmantra.com/audio_emotion/process_video", {
+                video_url: videoUrl,
+            }),
+            axios.post("https://ml.recruitmantra.com/video_emotion/upload", {
+                video_url: videoUrl,
+            }),
+            axios.post("https://ml.recruitmantra.com/video_text/process", {
+                question: question,
+                video_url: videoUrl,
+            }),
+        ]);
+        const confidence = Number(
+            ((response_video.data.average_confidence + response_audio.data.confidence_level) / 2).toFixed(2)
+        );
+        const accuracy = Number(
+            (response_accuracy.data.Accuracy).toFixed(2)
+        )
+
+        // interview.confidence.push({ questionNumber: question_number, value: confidence });
+        // interview.accuracy.push({ questionNumber: question_number, value: response_accuracy.data.Accuracy })
+        const updatedinterview = await InterView.findByIdAndUpdate(
+            interview_id,
+            {
+                $push: {
+                    confidence: { questionNumber: question_number, value: confidence },
+                    accuracy: { questionNumber: question_number, value: accuracy },
+                }
+            },
+            { new: true }
+        );
+        return res.status(200).json({ message: "Success", updatedinterview });
+    } catch (e) {
+        return res.status(500).json({
+            message: "Internal Server Error",
+            error: e.message,
+        });
     }
 }
 

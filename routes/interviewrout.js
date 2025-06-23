@@ -19,7 +19,7 @@ router.post('/uploadvideo',validation,videoupload); // send "interview_id"  body
 router.get('/getUrl',validation,getVideoUrl)   // sent interview_id in body
 
 //for acknowledging the server that video is uploaded successfully
-router.post('/ackServer',validation,ackServer);
+router.post('/ackServer',ackServer);
 
 //for inserting confidence for one perticuler question
 router.post('/insertconfidence',insertConfidence)

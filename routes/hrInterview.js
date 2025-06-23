@@ -3,6 +3,7 @@ const{handlestart,
     handlestop,
     getinfo,
     videoupload,
+    ackServer,
     getVideoUrl,
     insertConfidence}=require('../controller/hrinterview')
 const router=express.Router();
@@ -16,6 +17,8 @@ router.post('/stop',validation,handlestop)   //send interview_id,result,confiden
 
 //get detail of one perticuler interview
 router.get('/getdetail',validation,getinfo)  // send  interview_id
+
+router.post('/ackServer',validation,ackServer)
 
 //will return presigned url for uploading the video
 router.post('/uploadvideo',validation,videoupload); // send "interview_id"  body
