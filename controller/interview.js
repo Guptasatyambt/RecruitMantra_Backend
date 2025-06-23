@@ -255,7 +255,6 @@ async function getVideoUrl(req, res) {
 async function ackServer(req, res) {
     try {
         const { interview_id, question_number, question, videoUrl } = req.body;
-        console.log(question);
         if (!interview_id || !question_number || !question || !videoUrl) {
             return res.status(400).json({ message: "All fields are compulsory" });
         }
