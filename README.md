@@ -1,6 +1,6 @@
-# Intern View API
+# RecruitMantra API
 
-Backend REST API for the Intern View interview preparation platform. This repository provides the server-side implementation for user registration, interview sessions, college and company management, job openings, feedback, and resume/career application workflows.
+Backend REST API for the RecruitMantra interview preparation platform. This repository provides the server-side implementation for user registration, interview sessions, college and company management, job openings, feedback, and resume/career application workflows.
 
 ## Built With
 
@@ -218,5 +218,3 @@ npx nodemon index.js
 ## License
 
 ISC
-# Intern_view
-Android application for preparing for interview
